@@ -1,0 +1,126 @@
+Table Users {
+  user_id int [pk]
+  Fullname varchar(250)
+  phone varchar(50) [unique]
+  email varchar(100) [unique]
+  address varchar(250)
+  passwordhash varchar(255)
+  role enum(250) [note: 'Allowed roles: SystemAdmin, RestaurantOwner, Customer']
+
+
+ //systemAdmin has access on this operations
+  created_at timestamp 
+  created_by varchar (50) [note: 'System admin responsible']
+  
+  updated_at timestamp
+  updated_by varchar  [note: 'System admin responsible']
+  
+  deleted_at timestamp
+  deleted_by varchar (50) [note: 'System admin responsible']
+
+}
+
+Table Restaurants { 
+  restaurant_id int [pk] 
+  owner_id int [ref: > Users.user_id] 
+  Name varchar(50) 
+  phone varchar(50) [unique]
+  address varchar(250)
+  opentime timestamp
+  closingtime timestamp
+  Description varchar(250) 
+
+  created_at timestamp 
+  created_by varchar (50) [note: 'System admin responsible']
+
+//restaurant owner and system Admin has access
+  updated_at timestamp
+  updated_by varchar  [note: 'System admin responsible or RestaurantOwner']
+
+  deleted_at timestamp
+  deleted_by varchar (50) [note: 'System admin responsible']
+
+
+
+}
+
+Table Categories {
+  categories_id int [pk] 
+  Name varchar(100)
+
+
+  created_at timestamp 
+  created_by varchar (50) [note: 'RestaurantOwner']
+
+  updated_at timestamp
+  updated_by varchar  [note: 'RestaurantOwner']
+
+  deleted_at timestamp
+  deleted_by varchar (50) [note: 'RestaurantOwner']
+
+}
+
+
+Table RestaurantCategories [note: 'ManyToMany Table where I put the FKs (composite key)'] {
+  restaurant_id int [ref: > Restaurants.restaurant_id]
+  category_id int [ref: > Categories.categories_id]
+
+  Indexes {
+    (restaurant_id, category_id) [pk] // Composite Primary Key
+  }
+}
+
+Table Products { 
+  product_id int [pk]
+  Name varchar(100) 
+  Price decimal
+  categories_id int [ref: > Categories.categories_id]
+  is_available bool 
+  Description varchar(250) 
+
+   created_at timestamp 
+  created_by varchar (50) [note: 'RestaurantOwner']
+
+  updated_at timestamp
+  updated_by varchar  [note: 'RestaurantOwner']
+
+  deleted_at timestamp
+  deleted_by varchar (50) [note: 'RestaurantOwner']
+}
+
+Table Orders {
+  order_id int [pk] 
+  CustomerId int [ref: > Users.user_id] 
+  RestaurantId int [ref: > Restaurants.restaurant_id] 
+  status_name enum(50)  [note:'confirm-preparing -OnDelivery -Delivered- Cancelled']
+  OrderDate datetime 
+  TotalPrice decimal 
+
+  created_at timestamp 
+  created_by varchar (50) [note: 'Customer']
+
+  updated_at timestamp
+  updated_by varchar  [note: 'Customer']
+
+  deleted_at timestamp
+  deleted_by varchar (50) [note: 'restaurantowner from database']
+}
+
+Table OrderItems {
+  orderItems_id int [pk]
+  order_id int [ref: > Orders.order_id] 
+  Product_id int [ref: > Products.product_id] 
+  Quantity int 
+  Price decimal 
+
+
+  updated_at timestamp
+  updated_by varchar  [note: 'Customer']
+
+  deleted_at timestamp
+  deleted_by varchar (50) [note: 'Customer']
+}
+
+    
+
+

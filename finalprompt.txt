@@ -1,0 +1,485 @@
+You are a Senior ASP.NET Core (.NET 10), Entity Framework Core, and Data Engineering expert.
+
+I have a Restaurant Recommendation System.
+
+I will provide my ERD (or Entity classes).
+
+Your task is to generate complete EF Core HasData() seed data using fixed GUIDs.
+
+The dataset must be designed specifically for testing Recommendation Systems:
+- Collaborative Filtering
+- Content-Based Filtering
+- User Similarity
+- Restaurant Similarity
+- Product Similarity
+
+The generated data must simulate a real food delivery platform in Alexandria, Egypt.
+
+Do NOT generate random meaningless data.
+Every record must have a purpose for testing recommendation algorithms.
+
+====================================
+General Requirements
+====================================
+
+- Use ASP.NET Core .NET 10 compatible EF Core HasData().
+- Use GUID primary keys everywhere (NO integer IDs).
+- Use fixed GUID values for all entities.
+- Respect all foreign keys.
+- Respect navigation relationships.
+- All restaurants must be located in Alexandria, Egypt.
+- Prices must be realistic and stored in Egyptian Pounds (EGP).
+- Dates should be realistic and distributed across several months.
+- No placeholder values.
+- No Lorem Ipsum.
+- No fake meaningless records.
+
+====================================
+Dataset Size
+====================================
+
+Generate exactly:
+
+Users:
+- 8 Users total:
+    - 5 Customers
+    - 2 Restaurant Owners
+    - 1 System Administrator
+
+Restaurants:
+- 6 Restaurants
+
+Categories:
+- 6 Categories
+
+Products:
+- 18 Products
+    - Exactly 3 products per restaurant
+
+Orders:
+- 30 Orders
+
+OrderItems:
+- Reduce OrderItems to a realistic amount (around 35-40 items).
+- Do NOT create unnecessary items.
+- Every order should contain realistic purchased products.
+
+Reviews/Ratings:
+- 20 Ratings
+
+Favorites:
+- Do NOT create Favorites.
+- The system will not use Favorites.
+
+
+====================================
+User Roles and Permissions
+====================================
+
+Users:
+
+Customers:
+- Can create multiple orders.
+- Can order from multiple restaurants.
+- Can revisit restaurants.
+- Can create ratings.
+- Can create ratings without comments.
+
+Restaurant Owners:
+- Own restaurants.
+- Manage products.
+- Can also behave as normal customers:
+    - Can order from other restaurants.
+    - Can rate other restaurants.
+
+System Administrator:
+- Can create users.
+- Can create restaurants.
+- Does NOT place orders.
+- Does NOT create favorites.
+- Only administrative role.
+
+
+====================================
+Entity Relationships
+====================================
+
+Category:
+- Created and managed by RestaurantOwner.
+- Restaurants can have multiple categories.
+
+Restaurant:
+- Created by RestaurantOwner or System Administrator.
+- Belongs to one or multiple categories.
+- Has products.
+
+Product:
+- Belongs to exactly one restaurant.
+- Created by RestaurantOwner.
+
+Order:
+- Belongs to Customer.
+- One customer can have many orders.
+- Customers can order from multiple restaurants.
+
+OrderItem:
+- Belongs to Order.
+- References Product.
+- Product must belong to the same restaurant as the Order.
+
+Rating:
+- Created by Customers.
+- Customers can rate multiple restaurants.
+- Ratings are used for recommendation algorithms.
+- Comments are NOT required.
+- Store only rating value and necessary fields.
+
+
+====================================
+Restaurants
+====================================
+
+Generate exactly 6 restaurants in Alexandria.
+
+The restaurants must have strong identities.
+
+IMPORTANT:
+Create similarity between restaurants.
+
+Do NOT create only one restaurant per cuisine.
+
+Create multiple restaurants from similar categories so recommendation algorithms can learn similarities.
+
+Example structure:
+
+Italian Group:
+Restaurant 1:
+- Italian
+- Pizza
+- Pasta
+
+Restaurant 2:
+- Italian
+- Fast Food
+- Pizza
+
+Fried Chicken Group:
+Restaurant 3:
+- Fried Chicken
+- American
+
+Restaurant 4:
+- Fried Chicken
+- American
+- Fast Food
+
+
+Other restaurants:
+Restaurant 5:
+- Arabic
+- Grill
+
+Restaurant 6:
+- Japanese
+
+
+The system should be able to recommend:
+
+A user who likes Fried Chicken Restaurant 1
+may receive Fried Chicken Restaurant 2.
+
+A user who likes Italian Restaurant 1
+may receive Italian Restaurant 2.
+
+
+====================================
+Categories
+====================================
+
+Create exactly 6 categories:
+
+Examples:
+
+- Italian
+- French
+- American
+- Fried Chicken
+- Arabic
+- Japanese
+
+
+Some restaurants must belong to multiple categories.
+
+Example:
+
+Restaurant:
+- American
+- Fried Chicken
+- Fast Food
+
+Restaurant:
+- Italian
+- Pizza
+
+
+====================================
+Products
+====================================
+
+Each restaurant must have exactly 3 products.
+
+Products must match the restaurant identity.
+
+Examples:
+
+Italian Restaurant:
+
+- Margherita Pizza
+- Chicken Alfredo Pasta
+- Tiramisu
+
+
+Fried Chicken Restaurant:
+
+- Crispy Chicken Meal
+- Chicken Wings
+- Loaded Fries
+
+
+American Restaurant:
+
+- Classic Burger
+- Double Beef Burger
+- Milkshake
+
+
+Arabic Restaurant:
+
+- Mixed Grill
+- Chicken Shawarma
+- Kofta Plate
+
+
+Japanese Restaurant:
+
+- Salmon Sushi
+- Chicken Teriyaki
+- Japanese Ramen
+
+
+Prices:
+- Must be realistic Alexandria restaurant prices in EGP.
+
+
+====================================
+Recommendation System Behavior
+====================================
+
+The dataset must intentionally create user similarity.
+
+Users should NOT have completely different tastes.
+
+Create overlapping behavior.
+
+Example:
+
+User Ahmed:
+- Orders Italian Restaurant 1 many times.
+- Orders Fried Chicken Restaurant 1.
+- Rates Italian restaurants highly.
+
+User Mohamed:
+- Orders Italian Restaurant 2.
+- Orders Fried Chicken Restaurant 2.
+- Has similar ratings to Ahmed.
+
+
+User Sara:
+- Orders Arabic restaurant frequently.
+- Also orders Fried Chicken restaurants.
+
+
+User Ali:
+- Likes Italian.
+- Likes Japanese.
+
+
+The recommendation system should discover:
+
+- Ahmed and Mohamed are similar users.
+- Fried Chicken Restaurant 1 and Fried Chicken Restaurant 2 are similar restaurants.
+- Italian Restaurant 1 and Italian Restaurant 2 have similar audiences.
+
+
+====================================
+Orders
+====================================
+
+Generate exactly 30 Orders.
+
+Rules:
+
+- Each customer should have between 5 and 8 orders.
+- Orders should NOT be evenly distributed.
+- Some restaurants must be much more popular.
+
+Create realistic repeated behavior.
+
+Example:
+
+User 1:
+- Orders Fried Chicken Restaurant 1 multiple times.
+
+User 2:
+- Orders Fried Chicken Restaurant 2 multiple times.
+
+This should create enough similarity for recommendations.
+
+Customers can order from multiple restaurants.
+
+Restaurant Owners can also place orders from competitors.
+
+System Administrator cannot place orders.
+
+
+====================================
+Order Items
+====================================
+
+Generate around 35-40 OrderItems.
+
+Rules:
+
+- Keep quantity realistic.
+- Do not overload orders.
+- Respect product ownership.
+
+Examples:
+
+Pizza order:
+- Pizza
+- Drink
+- Dessert
+
+Burger order:
+- Burger
+- Fries
+
+Chicken order:
+- Chicken meal
+- Sauce
+- Fries
+
+
+====================================
+Ratings
+====================================
+
+Generate exactly 20 ratings.
+
+Rules:
+
+- No comments.
+- Only rating values.
+
+Distribution:
+
+Most ratings:
+- 5 stars
+- 4 stars
+
+Some:
+- 3 stars
+
+Very few:
+- 2 stars
+
+Almost none:
+- 1 star
+
+
+Ratings must create recommendation patterns.
+
+Example:
+
+Ahmed:
+Italian Restaurant 1 = 5 stars
+Fried Chicken Restaurant 1 = 4 stars
+
+
+Mohamed:
+Italian Restaurant 2 = 5 stars
+Fried Chicken Restaurant 2 = 4 stars
+
+
+This creates user similarity.
+
+
+====================================
+Important Recommendation Requirements
+====================================
+
+The dataset must support:
+
+Collaborative Filtering:
+
+- Same users interacting with similar restaurants.
+- Users rating similar restaurants.
+- Repeated ordering behavior.
+
+
+Content-Based Filtering:
+
+- Restaurants sharing categories.
+- Restaurants sharing similar products.
+- Users preferring specific cuisines.
+
+
+Restaurant Similarity:
+
+Example:
+
+Fried Chicken Restaurant 1:
+- Fried Chicken
+- American
+
+Fried Chicken Restaurant 2:
+- Fried Chicken
+- American
+- Fast Food
+
+
+Italian Restaurant 1:
+- Italian
+- Pizza
+
+Italian Restaurant 2:
+- Italian
+- Pizza
+- Fast Food
+
+
+====================================
+Output Format
+====================================
+
+Output ONLY complete EF Core HasData() C# code.
+
+Do not explain anything.
+
+Generate seed data for:
+
+- Users
+- Roles relationships
+- Categories
+- Restaurants
+- Products
+- Orders
+- OrderItems
+- Ratings
+
+The code must compile directly inside:
+
+OnModelCreating(ModelBuilder modelBuilder)
+
+Use fixed GUID values only.

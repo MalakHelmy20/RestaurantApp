@@ -1,0 +1,17 @@
+D:\.net\restaurantsprojects\MyRestaurantApp\MyRestaurantApp.Infrastructure\bin\Debug\net10.0\MyRestaurantApp.Infrastructure.deps.json
+D:\.net\restaurantsprojects\MyRestaurantApp\MyRestaurantApp.Infrastructure\bin\Debug\net10.0\MyRestaurantApp.Infrastructure.runtimeconfig.json
+D:\.net\restaurantsprojects\MyRestaurantApp\MyRestaurantApp.Infrastructure\bin\Debug\net10.0\MyRestaurantApp.Infrastructure.dll
+D:\.net\restaurantsprojects\MyRestaurantApp\MyRestaurantApp.Infrastructure\bin\Debug\net10.0\MyRestaurantApp.Infrastructure.pdb
+D:\.net\restaurantsprojects\MyRestaurantApp\MyRestaurantApp.Infrastructure\bin\Debug\net10.0\MyRestaurantApp.Domain.dll
+D:\.net\restaurantsprojects\MyRestaurantApp\MyRestaurantApp.Infrastructure\bin\Debug\net10.0\MyRestaurantApp.Domain.pdb
+D:\.net\restaurantsprojects\MyRestaurantApp\MyRestaurantApp.Infrastructure\obj\Debug\net10.0\MyRestaurantApp.Infrastructure.csproj.AssemblyReference.cache
+D:\.net\restaurantsprojects\MyRestaurantApp\MyRestaurantApp.Infrastructure\obj\Debug\net10.0\MyRestaurantApp.Infrastructure.GeneratedMSBuildEditorConfig.editorconfig
+D:\.net\restaurantsprojects\MyRestaurantApp\MyRestaurantApp.Infrastructure\obj\Debug\net10.0\MyRestaurantApp.Infrastructure.AssemblyInfoInputs.cache
+D:\.net\restaurantsprojects\MyRestaurantApp\MyRestaurantApp.Infrastructure\obj\Debug\net10.0\MyRestaurantApp.Infrastructure.AssemblyInfo.cs
+D:\.net\restaurantsprojects\MyRestaurantApp\MyRestaurantApp.Infrastructure\obj\Debug\net10.0\MyRestaurantApp.Infrastructure.csproj.CoreCompileInputs.cache
+D:\.net\restaurantsprojects\MyRestaurantApp\MyRestaurantApp.Infrastructure\obj\Debug\net10.0\MyRestau.ADC56867.Up2Date
+D:\.net\restaurantsprojects\MyRestaurantApp\MyRestaurantApp.Infrastructure\obj\Debug\net10.0\MyRestaurantApp.Infrastructure.dll
+D:\.net\restaurantsprojects\MyRestaurantApp\MyRestaurantApp.Infrastructure\obj\Debug\net10.0\refint\MyRestaurantApp.Infrastructure.dll
+D:\.net\restaurantsprojects\MyRestaurantApp\MyRestaurantApp.Infrastructure\obj\Debug\net10.0\MyRestaurantApp.Infrastructure.pdb
+D:\.net\restaurantsprojects\MyRestaurantApp\MyRestaurantApp.Infrastructure\obj\Debug\net10.0\MyRestaurantApp.Infrastructure.genruntimeconfig.cache
+D:\.net\restaurantsprojects\MyRestaurantApp\MyRestaurantApp.Infrastructure\obj\Debug\net10.0\ref\MyRestaurantApp.Infrastructure.dll
