@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\MyRestaurantApp.Domain\MyRestaurantApp.Domain.csproj" />
+    <ProjectReference Include="..\MyRestaurantApp.Application\MyRestaurantApp.Application.csproj" />
   </ItemGroup>
 
   <ItemGroup>

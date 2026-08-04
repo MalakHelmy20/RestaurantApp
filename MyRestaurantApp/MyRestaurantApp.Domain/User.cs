@@ -20,7 +20,7 @@
 
         public string Phone { get; set; } = string.Empty;
 
-        public string PasswordHash { get; set; } = string.Empty;
+        public string Password { get; set; } = string.Empty;
 
         public UserRole Role { get; set; } = UserRole.Customer;
 
@@ -37,7 +37,7 @@
         public Guid? DeletedBy { get; set; }
 
         //list
-        public List<Ratings> Ratings { get; set; } = new List<Ratings>();
+        public List<Rating> Ratings { get; set; } = new List<Rating>();
         
         public List<Order> Orders { get; set; } = new List<Order>();
 

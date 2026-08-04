@@ -50,7 +50,7 @@ namespace MyRestaurantApp.Domain
 
      //to know all the ratings
 
-        public List<Ratings> Ratings { get; set; } = new List<Ratings>();
+        public List<Rating> Ratings { get; set; } = new List<Rating>();
 
 
 

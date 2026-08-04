@@ -12,7 +12,7 @@ namespace MyRestaurantApp.Infrastructure
         public DbSet<Order> Orders { get; set; }
         public DbSet<OrderItem> OrderItems { get; set; }
         public DbSet<RestaurantCategory> RestaurantCategories { get; set; }
-        public DbSet<Ratings> Ratings { get; set; }
+        public DbSet<Rating> Ratings { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -28,12 +28,12 @@ namespace MyRestaurantApp.Infrastructure
             modelBuilder.Entity<RestaurantCategory>()
                 .HasKey(rc => new { rc.RestaurantId, rc.CategoryId });
 
-            modelBuilder.Entity<Ratings>()
-                .Property(r => r.Rating)
+            modelBuilder.Entity<Rating>()
+                .Property(r => r.RatingValue)
                 .HasDefaultValue(5);
 
-           modelBuilder.Entity<Ratings>()
-    .ToTable(t => t.HasCheckConstraint("CK_Ratings_Rating", "[Rating] >= 1 AND [Rating] <= 5"));
+       modelBuilder.Entity<Rating>()
+        .ToTable(t => t.HasCheckConstraint("CK_Ratings_Rating", "[RatingValue] >= 1 AND [RatingValue] <= 5"));
 
 
     // to prevent cascade delete path for Order and Restaurant relationship
@@ -47,17 +47,17 @@ namespace MyRestaurantApp.Infrastructure
     .HasOne(o => o.Restaurant)
     .WithMany()
     .HasForeignKey(o => o.RestaurantId)
-    .OnDelete(DeleteBehavior.Restrict);
+    .OnDelete(DeleteBehavior.Restrict); 
 
 
 //to prevent cascade delete from Rating to User and Restaurant
-modelBuilder.Entity<Ratings>()
+modelBuilder.Entity<Rating>()
     .HasOne(r => r.User)
     .WithMany()
     .HasForeignKey(r => r.UserId)
     .OnDelete(DeleteBehavior.Restrict);
 
-    modelBuilder.Entity<Ratings>()
+    modelBuilder.Entity<Rating>()
     .HasOne(r => r.Restaurant)
     .WithMany()
     .HasForeignKey(r => r.RestaurantId)

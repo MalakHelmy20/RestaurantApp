@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 namespace MyRestaurantApp.Domain{
-public class Ratings
+public class Rating
 {
     public Guid Id { get; set; }
 
@@ -15,7 +15,7 @@ public class Ratings
      public Restaurant Restaurant { get; set; } = null!;
  
        //with constraints, rating should be between 1 and 5
-       public int Rating { get; set; } 
+       public int RatingValue { get; set; } 
    
      //audit Tables
 
