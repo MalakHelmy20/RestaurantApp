@@ -1,10 +1,13 @@
+using System;
+using System.Collections.Generic;
+using System.Security.Claims;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using MyRestaurantApp.Application.Features.Users.Dtos;
 using MyRestaurantApp.Application.Features.Users.Services;
-using MyRestaurantApp.Application.Features.Users.Mapping;
-using MyRestaurantApp.Application.Features.Users.IRepository;
-using MyRestaurantApp.Domain;
-using Microsoft.AspNetCore.Authorization;
 
 namespace MyRestaurantApp.Api.Controllers
 {
@@ -14,14 +17,15 @@ namespace MyRestaurantApp.Api.Controllers
     {
         private readonly IUserService _userService;
 
-        
         public UserController(IUserService userService)
         {
-            _userService = userService;
+            _userService = userService ?? throw new ArgumentNullException(nameof(userService));
         }
 
-        [AllowAnonymous]
         [HttpPost("login")]
+        [AllowAnonymous]
+        [ProducesResponseType(typeof(UserResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<IActionResult> Login([FromBody] LoginRequest request, CancellationToken cancellationToken)
         {
             var response = await _userService.LoginAsync(request, cancellationToken);
@@ -29,11 +33,14 @@ namespace MyRestaurantApp.Api.Controllers
             {
                 return Unauthorized(new { message = "Invalid email or password." });
             }
+
             return Ok(response);
         }
 
-        [AllowAnonymous]
         [HttpPost("register")]
+        [AllowAnonymous]
+        [ProducesResponseType(typeof(UserResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> Register([FromBody] RegisterRequest request, CancellationToken cancellationToken)
         {
             var response = await _userService.RegisterAsync(request, cancellationToken);
@@ -41,69 +48,95 @@ namespace MyRestaurantApp.Api.Controllers
             {
                 return BadRequest(new { message = "Registration failed." });
             }
+
             return Ok(response);
         }
 
+        [HttpGet]
         [Authorize(Roles = "SystemAdmin")]
-        [HttpGet("getAll")]
+        [ProducesResponseType(typeof(IEnumerable<UserResponse>), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
         {
             var users = await _userService.GetAllAsync(cancellationToken);
             return Ok(users);
         }
 
-        [Authorize(Roles = "SystemAdmin")]
         [HttpGet("{userId:guid}")]
+        [Authorize(Roles = "SystemAdmin")]
+        [ProducesResponseType(typeof(UserResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<IActionResult> GetById(Guid userId, CancellationToken cancellationToken)
         {
             var user = await _userService.GetByIdAsync(userId, cancellationToken);
             if (user == null)
+            {
                 return NotFound(new { message = "User not found." });
+            }
 
             return Ok(user);
         }
 
-        [Authorize(Roles= "SystemAdmin")]
-        [HttpDelete("delete/{userId:guid}")]
+        [HttpPost]
+        [Authorize(Roles = "SystemAdmin")]
+        [ProducesResponseType(typeof(UserResponse), StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        public async Task<IActionResult> Create([FromBody] CreateUserRequest request, CancellationToken cancellationToken)
+        {
+            var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!Guid.TryParse(currentUserId, out var createdByUserId))
+            {
+                return Unauthorized();
+            }
+
+            var result = await _userService.CreateAsync(request, createdByUserId, cancellationToken);
+            return CreatedAtAction(nameof(GetById), new { userId = result.Id }, result);
+        }
+
+        [HttpPut("{userId:guid}")]
+        [Authorize(Roles = "SystemAdmin")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        public async Task<IActionResult> Update(Guid userId, [FromBody] UpdateUserRequest request, CancellationToken cancellationToken)
+        {
+            var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!Guid.TryParse(currentUserId, out var updatedByUserId))
+            {
+                return Unauthorized();
+            }
+
+            var result = await _userService.UpdateAsync(userId, request, updatedByUserId, cancellationToken);
+            if (!result)
+            {
+                return NotFound(new { message = "User not found." });
+            }
+
+            return NoContent();
+        }
+
+        [HttpDelete("{userId:guid}")]
+        [Authorize(Roles = "SystemAdmin")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<IActionResult> Delete(Guid userId, CancellationToken cancellationToken)
         {
             var result = await _userService.DeleteAsync(userId, cancellationToken);
             if (!result)
-                return NotFound();
+            {
+                return NotFound(new { message = "User not found." });
+            }
 
-            return Ok();
-        }
-
-        [Authorize(Roles= "SystemAdmin")]
-        [HttpPut("update/{userId:guid}")]
-        public async Task<IActionResult> Update(
-            Guid userId, 
-            [FromBody] UpdateUserRequest request, 
-            [FromQuery] Guid updatedByUserId,
-            CancellationToken cancellationToken)
-        {
-            var result = await _userService.UpdateAsync(userId, request, updatedByUserId, cancellationToken);
-            if (!result)
-                return NotFound();
-
-            return Ok(true);
-        }
-
-        
-        [Authorize(Roles= "SystemAdmin")]
-        [HttpPost("create")]
-        public async Task<IActionResult> Create(
-            [FromBody] CreateUserRequest request,
-            [FromQuery] Guid createdByUserId,
-            CancellationToken cancellationToken)
-        {
-            if (request == null)
-                return BadRequest(new { message = "Data cannot be null." });
-
-            var result = await _userService.CreateAsync(request, createdByUserId, cancellationToken);
-
-            return CreatedAtAction(nameof(GetById), new { userId = result.Id }, result);
+            return NoContent();
         }
     }
 }
-  

@@ -1,6 +1,6 @@
+using System.Linq;
+using System.Collections.Generic;
 using MyRestaurantApp.Application.Features.Categories.Dtos;
-using MyRestaurantApp.Application.Features.Categories.Services;
-using MyRestaurantApp.Application.Features.Categories.IRepository;
 using MyRestaurantApp.Domain;
 
 namespace MyRestaurantApp.Application.Features.Categories.Mapping
@@ -13,29 +13,56 @@ namespace MyRestaurantApp.Application.Features.Categories.Mapping
             {
                 Id = category.Id,
                 Name = category.Name,
+                TotalProducts = category.Products?.Count ?? 0,
                 
+                RestaurantId = category.RestaurantCategories?.FirstOrDefault()?.RestaurantId ?? Guid.Empty
             };
         }
 
         public static Category ToEntity(this CreateCategoryRequest request)
         {
-            return new Category
+            var category = new Category
             {
-                Name = request.Name,
-                
+                Name = request.Name
             };
-        }
-
-        public static void UpdateEntity(
-            this UpdateCategoryRequest request,
-            Category category)
-        {
-            if (request.Name != null)
-            {
-                category.Name = request.Name;
-            }
 
            
+            category.RestaurantCategories.Add(new RestaurantCategory
+            {
+                RestaurantId = request.RestaurantId,
+                CategoryId = category.Id
+            });
+
+            return category;
         }
+
+       public static void UpdateEntity(this UpdateCategoryRequest request, Category category)
+{
+    if (!string.IsNullOrWhiteSpace(request.Name))
+    {
+        category.Name = request.Name;
+    }
+
+  
+    if (request.RestaurantId != Guid.Empty)
+    {
+        
+        category.RestaurantCategories ??= new List<RestaurantCategory>();
+
+        var existingRelation = category.RestaurantCategories.FirstOrDefault();
+        if (existingRelation != null)
+        {
+            existingRelation.RestaurantId = request.RestaurantId;
+        }
+        else
+        {
+            category.RestaurantCategories.Add(new RestaurantCategory
+            {
+                RestaurantId = request.RestaurantId,
+                CategoryId = category.Id
+            });
+        }
+    }
+}
     }
 }

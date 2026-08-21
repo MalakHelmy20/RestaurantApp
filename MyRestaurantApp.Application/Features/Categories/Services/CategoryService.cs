@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
+using System.Linq;
 using System.Threading.Tasks;
 using MyRestaurantApp.Application.Features.Categories.Dtos;
 using MyRestaurantApp.Application.Features.Categories.IRepository;
@@ -11,12 +12,12 @@ namespace MyRestaurantApp.Application.Features.Categories.Services
 {
     public class CategoryService : ICategoryService
     {
-        private readonly ICategoryRepository _categoryRepository;
+      private readonly ICategoryRepository _categoryRepository;
 
-        public CategoryService(ICategoryRepository categoryRepository)
-        {
-            _categoryRepository = categoryRepository;
-        }
+public CategoryService(ICategoryRepository categoryRepository)
+{
+    _categoryRepository = categoryRepository;
+}
 
         public async Task<CategoryResponse> CreateAsync(
             CreateCategoryRequest request,

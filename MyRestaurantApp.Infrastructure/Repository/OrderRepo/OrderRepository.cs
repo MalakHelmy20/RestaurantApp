@@ -1,56 +1,68 @@
-
-
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 using MyRestaurantApp.Domain;
-using MyRestaurantApp.Application.Features.Orders.Dtos;
+using MyRestaurantApp.Infrastructure;
 using MyRestaurantApp.Application.Features.Orders.IRepository;
+
 namespace MyRestaurantApp.Infrastructure.Repository.OrderRepo
 {
     public class OrderRepository : IOrderRepository
     {
-        private readonly List <Order>_orders=new();
+        private readonly AppDbContext _dbContext;
 
-        public Task<bool>CreateAsync(Order order,CancellationToken cancellationToken = default)
+        public OrderRepository(AppDbContext dbContext)
         {
-            _orders.Add(order);
-            return Task.FromResult(true);
-
+            _dbContext = dbContext;
         }
 
-        
-       
-        public Task<Order?>GetByIdAsync(Guid orderId,CancellationToken cancellationToken = default)
+        public async Task<bool> CreateAsync(Order order, CancellationToken cancellationToken = default)
         {
-            var order=_orders.SingleOrDefault(x=>x.Id==orderId);
-            return Task.FromResult(order);
+            await _dbContext.Orders.AddAsync(order, cancellationToken);
+            return await _dbContext.SaveChangesAsync(cancellationToken) > 0;
         }
 
-        public Task<IEnumerable<Order>>GetAllAsync(CancellationToken cancellationToken = default)
+        public async Task<Order?> GetByIdAsync(Guid orderId, CancellationToken cancellationToken = default)
         {
-            return Task.FromResult(_orders.AsEnumerable());
+            return await _dbContext.Orders
+                .FirstOrDefaultAsync(x => x.Id == orderId, cancellationToken);
         }
 
-          public Task<bool> UpdateAsync(Order order, CancellationToken cancellationToken = default) 
-       {
-            var orderIndex=_orders.FindIndex(x=>x.Id==order.Id);
-            if (orderIndex == -1)
+        public async Task<IEnumerable<Order>> GetAllAsync(CancellationToken cancellationToken = default)
+        {
+            return await _dbContext.Orders
+                .AsNoTracking()
+                .ToListAsync(cancellationToken);
+        }
+
+        public async Task<bool> UpdateAsync(Order order, CancellationToken cancellationToken = default) 
+        {
+            var existingOrder = await _dbContext.Orders
+                .FirstOrDefaultAsync(x => x.Id == order.Id, cancellationToken);
+
+            if (existingOrder is null)
             {
-               return    Task.FromResult(false);
+                return false;
             }
-            _orders[orderIndex]=order;
-             return Task.FromResult(true);
 
+            _dbContext.Entry(existingOrder).CurrentValues.SetValues(order);
+            return await _dbContext.SaveChangesAsync(cancellationToken) > 0;
         }
 
-         public Task<bool> DeleteAsync(Guid orderId, CancellationToken cancellationToken = default)
+        public async Task<bool> DeleteAsync(Guid orderId, CancellationToken cancellationToken = default)
         {
-            var removedCount = _orders.RemoveAll(x => x.Id == orderId);
-            var orderRemoved = removedCount > 0;
-            return Task.FromResult(orderRemoved);
+            var order = await _dbContext.Orders
+                .FirstOrDefaultAsync(x => x.Id == orderId, cancellationToken);
+
+            if (order is null)
+            {
+                return false;
+            }
+
+            _dbContext.Orders.Remove(order);
+            return await _dbContext.SaveChangesAsync(cancellationToken) > 0;
         } 
     }
 }

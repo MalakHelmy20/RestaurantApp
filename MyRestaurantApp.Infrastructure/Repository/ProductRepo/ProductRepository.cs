@@ -6,74 +6,86 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using MyRestaurantApp.Domain;
+using Microsoft.EntityFrameworkCore;
 using MyRestaurantApp.Application.Features.Products.Dtos;
 using MyRestaurantApp.Application.Features.Products.IRepository;
 namespace MyRestaurantApp.Infrastructure.Repository.ProductRepo
 {
     public class ProductRepository : IProductRepository
     {
-        private readonly List <Product>_products=new();
-
-        public Task<bool>CreateAsync(Product product,CancellationToken cancellationToken = default)
+       private readonly AppDbContext _dbContext;
+       public ProductRepository (AppDbContext dbContext)
         {
-            _products.Add(product);
-            return Task.FromResult(true);
+            _dbContext = dbContext;
+        }
+
+        public async Task<bool>CreateAsync(Product product,CancellationToken cancellationToken = default)
+        {
+            await _dbContext.Products.AddAsync(product,cancellationToken);
+            return await _dbContext.SaveChangesAsync(cancellationToken)>0;
 
         }
 
         
        
-        public Task<Product?>GetByIdAsync(Guid productId,CancellationToken cancellationToken = default)
+        public async Task<Product?>GetByIdAsync(Guid productId,CancellationToken cancellationToken = default)
         {
-            var product=_products.SingleOrDefault(x=>x.Id==productId);
-            return Task.FromResult(product);
+            var product= await _dbContext.Set<Product>().SingleOrDefaultAsync(x=>x.Id==productId,cancellationToken);
+            return product;
         }
 
-        public Task<IEnumerable<Product>> GetByIdsAsync(IEnumerable<Guid> productIds, CancellationToken cancellationToken = default)
+  public async Task<IEnumerable<Product>> GetByIdsAsync(IEnumerable<Guid> productIds, CancellationToken cancellationToken = default)
 {
-    var products = _products.Where(x => productIds.Contains(x.Id));
-    return Task.FromResult(products);
+    return await _dbContext.Products
+        .AsNoTracking()
+        .Where(x => productIds.Contains(x.Id))
+        .ToListAsync(cancellationToken);
 }
-
-        public Task<IEnumerable<Product>>GetAllAsync(CancellationToken cancellationToken = default)
+        public async Task<IEnumerable<Product>>GetAllAsync(CancellationToken cancellationToken = default)
         {
-            return Task.FromResult(_products.AsEnumerable());
+            return await _dbContext.Products
+        .AsNoTracking()
+        .ToListAsync(cancellationToken);
         }
 
-          public Task<bool> UpdateAsync(Product product, CancellationToken cancellationToken = default) 
+          public  async Task<bool> UpdateAsync(Product product, CancellationToken cancellationToken = default) 
        {
-            var productIndex=_products.FindIndex(x=>x.Id==product.Id);
-            if (productIndex == -1)
+            var existingProduct=await _dbContext.Products.FirstOrDefaultAsync(x=>x.Id==product.Id,cancellationToken);
+            if (existingProduct is null)
             {
-               return    Task.FromResult(false);
+               return    false;    //_dbContext.Products.Update(product);
             }
-            _products[productIndex]=product;
-             return Task.FromResult(true);
+          _dbContext.Entry(existingProduct).CurrentValues.SetValues(product);
+         return await _dbContext.SaveChangesAsync(cancellationToken)>0;
 
         }
 
-         public Task<bool> DeleteAsync(Guid productId, CancellationToken cancellationToken = default)
+         public async Task<bool> DeleteAsync(Guid productId, CancellationToken cancellationToken = default)
         {
-            var removedCount = _products.RemoveAll(x => x.Id == productId);
-            var productRemoved = removedCount > 0;
-            return Task.FromResult(productRemoved);
+           var product = await _dbContext.Products.FirstOrDefaultAsync(p=>p.Id==productId,cancellationToken);
+           if (product is null)
+            {
+                return false;
+            }
+            _dbContext.Products.Remove(product);
+            return await _dbContext.SaveChangesAsync(cancellationToken)>0;
         } 
 
-    public Task<IEnumerable<Product>> GetFilteredAsync(ProductFilterRequest filter, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<Product>> GetFilteredAsync(ProductFilterRequest filter, CancellationToken cancellationToken = default)
 {
-    var query = _products.AsEnumerable();
+    var query = _dbContext.Products.AsNoTracking().AsQueryable();
 
 
     if (!string.IsNullOrWhiteSpace(filter.SearchTerm))
     {
-        query = query.Where(p => p.Name.Contains(filter.SearchTerm, StringComparison.OrdinalIgnoreCase));
+        query = query.Where(p => p.Name.Contains(filter.SearchTerm));
     }
 
     var result = query
         .Skip((filter.PageNumber - 1) * filter.PageSize)
         .Take(filter.PageSize);
 
-    return Task.FromResult(result);
+    return  await query.ToListAsync(cancellationToken);
 }
     }
 }

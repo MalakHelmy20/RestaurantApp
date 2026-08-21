@@ -4,54 +4,78 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using MyRestaurantApp.Domain;
+using Microsoft.EntityFrameworkCore;
 using MyRestaurantApp.Application.Features.Users.Dtos;
 using MyRestaurantApp.Application.Features.Users.IRepository;
+using MyRestaurantApp.Infrastructure;
 namespace MyRestaurantApp.Infrastructure.Repository.UserRepo
 {
 
 public class UserRepository : IUserRepository
 {
-    private readonly List<User> _users = new();
+    private readonly AppDbContext _dbContext;
 
-
-    public Task<bool> CreateAsync(User user, CancellationToken cancellationToken = default)
+        public UserRepository(AppDbContext dbContext)
         {
-            _users.Add(user);
-            return Task.FromResult(true);
+            _dbContext = dbContext;
         }
 
-        public Task<User?>GetByIdAsync(Guid userId, CancellationToken cancellationToken = default)
-        {
-            var user=_users.SingleOrDefault(x=>x.Id==userId);
-            return Task.FromResult(user);
-        } 
 
-        public Task<IEnumerable<User>> GetAllAsync(CancellationToken cancellationToken = default)
+
+public async Task<bool> CreateAsync(User user, CancellationToken cancellationToken = default)
+{
+    await _dbContext.Users.AddAsync(user, cancellationToken);
+    return await _dbContext.SaveChangesAsync(cancellationToken) > 0;
+}
+
+        public async Task<User?>GetByIdAsync(Guid userId, CancellationToken cancellationToken = default)
         {
-            return Task.FromResult(_users.AsEnumerable());
+            var user = await _dbContext.Set<User>()
+        .FirstOrDefaultAsync(u => u.Id == userId, cancellationToken);
+
+         return user;
         }
-       public Task<bool> UpdateAsync(User user, CancellationToken cancellationToken = default) 
+
+        public async Task<IEnumerable<User>> GetAllAsync(CancellationToken cancellationToken = default)
+        {
+            return await _dbContext.Users
+           .AsNoTracking() 
+           .ToListAsync(cancellationToken);
+        }
+       public async Task<bool> UpdateAsync(User user, CancellationToken cancellationToken = default) 
        {
-            var userIndex=_users.FindIndex(x=>x.Id==user.Id);
-            if (userIndex == -1)
+            var existingUser = await _dbContext.Users
+                .FirstOrDefaultAsync(u => u.Id == user.Id, cancellationToken);
+
+            if (existingUser is null)
             {
-               return    Task.FromResult(false);
+                return false;
             }
-            _users[userIndex]=user;
-             return Task.FromResult(true);
+            _dbContext.Entry(existingUser).CurrentValues.SetValues(user);
+            return await _dbContext.SaveChangesAsync(cancellationToken) > 0;
 
         } 
       
-     public Task<bool> DeleteAsync(Guid userId, CancellationToken cancellationToken = default)
+     public async Task<bool> DeleteAsync(Guid userId, CancellationToken cancellationToken = default)
         {
-            var removedCount = _users.RemoveAll(x => x.Id == userId);
-            var userRemoved = removedCount > 0;
-            return Task.FromResult(userRemoved);
+           var user = await _dbContext.Users
+        .FirstOrDefaultAsync(u => u.Id == userId, cancellationToken);
+
+    if (user is null)
+    {
+        return false;
+    }
+
+    
+    _dbContext.Users.Remove(user);
+    
+    return await _dbContext.SaveChangesAsync(cancellationToken) > 0;
         }
-       public Task<User?> GetByEmailAsync(string email, CancellationToken cancellationToken)
+       public async Task<User?> GetByEmailAsync(string email, CancellationToken cancellationToken)
       {
-      var user = _users.FirstOrDefault(u => u.Email == email);
-       return Task.FromResult(user);
+      return await _dbContext.Users
+        .AsNoTracking() 
+        .FirstOrDefaultAsync(u => u.Email == email, cancellationToken);
      }
     
 }
