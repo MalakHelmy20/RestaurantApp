@@ -42,8 +42,8 @@ namespace MyRestaurantApp.Application.Features.Products.Mapping
                 Name = request.Name.Trim(),
                 Description = request.Description?.Trim() ?? string.Empty,
                 Price = request.Price,
-                IsAvailable = true, 
-               // RestaurantId = request.RestaurantId,
+                IsAvailable = true,
+                RestaurantId = request.RestaurantId,
                 CategoryId = request.CategoryId
             };
         }

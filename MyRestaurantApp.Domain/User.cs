@@ -24,6 +24,9 @@ namespace MyRestaurantApp.Domain
 
         public UserRole Role { get; set; } = UserRole.Customer;
 
+        public String Address {get; set; }=String.Empty;
+
+        public bool IsDeleted { get; set; } = false;
 
         //audit Tables
 

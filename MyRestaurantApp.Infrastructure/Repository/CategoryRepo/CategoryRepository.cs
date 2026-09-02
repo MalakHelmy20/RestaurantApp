@@ -27,27 +27,48 @@ namespace MyRestaurantApp.Infrastructure.Repository.CategoryRepo
         public async Task<Category?> GetByIdAsync(Guid categoryId, CancellationToken cancellationToken = default)
         {
             return await _dbContext.Categories
+                .Include(c => c.Products)
+                .Include(c => c.RestaurantCategories)
                 .FirstOrDefaultAsync(x => x.Id == categoryId, cancellationToken);
         }
 
         public async Task<IEnumerable<Category>> GetAllAsync(CancellationToken cancellationToken = default)
         {
             return await _dbContext.Categories
+                .Include(c => c.Products)
+                .Include(c => c.RestaurantCategories)
                 .AsNoTracking()
                 .ToListAsync(cancellationToken);
         }
 
         public async Task<bool> UpdateAsync(Category category, CancellationToken cancellationToken = default) 
         {
-            var existingCategory = await _dbContext.Categories
-                .FirstOrDefaultAsync(x => x.Id == category.Id, cancellationToken);
-
-            if (existingCategory is null)
+            if (_dbContext.Entry(category).State == EntityState.Detached)
             {
-                return false;
+                var existingCategory = await _dbContext.Categories
+                    .Include(c => c.RestaurantCategories)
+                    .FirstOrDefaultAsync(x => x.Id == category.Id, cancellationToken);
+
+                if (existingCategory is null)
+                {
+                    return false;
+                }
+
+                existingCategory.Name = category.Name;
+                existingCategory.UpdatedAt = category.UpdatedAt;
+                existingCategory.UpdatedBy = category.UpdatedBy;
+
+                existingCategory.RestaurantCategories.Clear();
+                foreach (var relation in category.RestaurantCategories)
+                {
+                    existingCategory.RestaurantCategories.Add(new RestaurantCategory
+                    {
+                        RestaurantId = relation.RestaurantId,
+                        CategoryId = existingCategory.Id
+                    });
+                }
             }
 
-            _dbContext.Entry(existingCategory).CurrentValues.SetValues(category);
             return await _dbContext.SaveChangesAsync(cancellationToken) > 0;
         }
 
@@ -61,7 +82,8 @@ namespace MyRestaurantApp.Infrastructure.Repository.CategoryRepo
                 return false;
             }
 
-            _dbContext.Categories.Remove(category);
+            category.IsDeleted = true;
+            category.DeletedAt = DateTime.UtcNow;
             return await _dbContext.SaveChangesAsync(cancellationToken) > 0;
         } 
     }

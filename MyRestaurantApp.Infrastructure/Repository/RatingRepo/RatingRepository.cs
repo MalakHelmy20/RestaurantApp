@@ -25,22 +25,33 @@ namespace MyRestaurantApp.Infrastructure.Repository.RatingRepo
 
         public async Task<Rating?> GetByIdAsync(Guid ratingId, CancellationToken cancellationToken = default)
         {
-            var rating = await _dbContext.Set<Rating>().FirstOrDefaultAsync(x => x.Id == ratingId,cancellationToken);
-            return rating;
+            return await WithDetails(_dbContext.Ratings)
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Id == ratingId, cancellationToken);
         }
 
         public async Task<IEnumerable<Rating>> GetAllAsync(CancellationToken cancellationToken = default)
         {
-            return await _dbContext.Ratings.AsNoTracking().ToListAsync(cancellationToken);
+            return await WithDetails(_dbContext.Ratings)
+                .AsNoTracking()
+                .ToListAsync(cancellationToken);
         }
 
        public async Task<IEnumerable<Rating>> GetByRestaurantIdAsync(Guid restaurantId, CancellationToken cancellationToken = default)
 {
-    return await _dbContext.Ratings
+    return await WithDetails(_dbContext.Ratings)
         .AsNoTracking()
         .Where(x => x.RestaurantId == restaurantId)
         .ToListAsync(cancellationToken);
 }
+
+        public async Task<Rating?> GetByUserAndRestaurantAsync(Guid userId, Guid restaurantId, CancellationToken cancellationToken = default)
+        {
+            return await _dbContext.Ratings
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.UserId == userId && x.RestaurantId == restaurantId, cancellationToken);
+        }
+
         public async Task<bool> UpdateAsync(Rating rating, CancellationToken cancellationToken = default)
         {
             var existingRating= await _dbContext.Ratings.FirstOrDefaultAsync(x => x.Id == rating.Id,cancellationToken);
@@ -61,8 +72,18 @@ namespace MyRestaurantApp.Infrastructure.Repository.RatingRepo
             {
                 return false;
             }
-            _dbContext.Ratings.Remove(rating);
+             rating.IsDeleted = true;
+             rating.DeletedAt = DateTime.UtcNow;
+           
             return await _dbContext.SaveChangesAsync(cancellationToken) > 0;
     }
+
+        private static IQueryable<Rating> WithDetails(IQueryable<Rating> query)
+        {
+            return query
+                .Include(r => r.User)
+                .Include(r => r.Restaurant);
+        }
+
 }
 }

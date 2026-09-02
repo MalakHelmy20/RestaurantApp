@@ -8,73 +8,112 @@ using Microsoft.EntityFrameworkCore;
 using MyRestaurantApp.Infrastructure;
 using MyRestaurantApp.Application.Features.Restaurants.Dtos;
 using MyRestaurantApp.Application.Features.Restaurants.IRepository;
+
 namespace MyRestaurantApp.Infrastructure.Repository.RestaurantRepo
 {
-
-public class RestaurantRepository : IRestaurantRepository
-{
-   private readonly AppDbContext _dbContext;
-  public RestaurantRepository(AppDbContext dbContext)
+    public class RestaurantRepository : IRestaurantRepository
     {
-        _dbContext = dbContext;
-    }
-      public async Task<bool> CreateAsync(Restaurant restaurant, CancellationToken cancellationToken = default)
+        private readonly AppDbContext _dbContext;
+
+        public RestaurantRepository(AppDbContext dbContext)
         {
-            await _dbContext.Restaurants.AddAsync(restaurant,cancellationToken);
-           return await _dbContext.SaveChangesAsync(cancellationToken)>0;
+            _dbContext = dbContext;
+        }
+
+        public async Task<bool> CreateAsync(Restaurant restaurant, CancellationToken cancellationToken = default)
+        {
+            await _dbContext.Restaurants.AddAsync(restaurant, cancellationToken);
+            return await _dbContext.SaveChangesAsync(cancellationToken) > 0;
         }
 
         public async Task<Restaurant?> GetByIdAsync(Guid restaurantId, CancellationToken cancellationToken = default)
         {
-            var restaurant = await _dbContext.Set<Restaurant>().SingleOrDefaultAsync(x => x.Id == restaurantId,cancellationToken);
-            return restaurant;
+            return await WithDetails(_dbContext.Restaurants)
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Id == restaurantId && !x.IsDeleted, cancellationToken);
         }
 
         public async Task<IEnumerable<Restaurant>> GetAllAsync(CancellationToken cancellationToken = default)
         {
-            return
-             await _dbContext.Restaurants
-             .AsNoTracking().ToListAsync(cancellationToken);
+            return await WithDetails(_dbContext.Restaurants.Where(r => !r.IsDeleted))
+                .AsNoTracking()
+                .ToListAsync(cancellationToken);
         }
 
-        public async  Task<bool> UpdateAsync(Restaurant restaurant, CancellationToken cancellationToken = default)
+        public async Task<bool> UpdateAsync(Restaurant restaurant, CancellationToken cancellationToken = default)
         {
-            var existingRestaurant= await _dbContext.Restaurants.FirstOrDefaultAsync(x => x.Id == restaurant.Id,cancellationToken);
+            var existingRestaurant = await _dbContext.Restaurants
+                .Include(r => r.RestaurantCategories)
+                .FirstOrDefaultAsync(x => x.Id == restaurant.Id, cancellationToken);
             if (existingRestaurant is null)
             {
                 return false;
             }
+
             _dbContext.Entry(existingRestaurant).CurrentValues.SetValues(restaurant);
-           return await _dbContext.SaveChangesAsync(cancellationToken)>0;
+
+            existingRestaurant.RestaurantCategories.Clear();
+            foreach (var relation in restaurant.RestaurantCategories ?? Enumerable.Empty<RestaurantCategory>())
+            {
+                existingRestaurant.RestaurantCategories.Add(new RestaurantCategory
+                {
+                    RestaurantId = existingRestaurant.Id,
+                    CategoryId = relation.CategoryId
+                });
+            }
+
+            return await _dbContext.SaveChangesAsync(cancellationToken) > 0;
         }
 
-        public async Task<bool> DeleteAsync(Guid restaurantId, CancellationToken cancellationToken = default)
+        public async Task<bool> DeleteAsync(Guid restaurantId, CancellationToken cancellationToken)
         {
-          var restaurant= await _dbContext.Restaurants.FirstOrDefaultAsync(x=>x.Id==restaurantId,cancellationToken);
-          if(restaurant is null)
-            {
-                return false;
-            }
-            _dbContext.Restaurants.Remove(restaurant);
+            var restaurant = await _dbContext.Restaurants.FirstOrDefaultAsync(r => r.Id == restaurantId, cancellationToken);
+            if (restaurant == null) return false;
+
+            restaurant.IsDeleted = true;
+            restaurant.DeletedAt = DateTime.UtcNow;
             return await _dbContext.SaveChangesAsync(cancellationToken) > 0;
         }
 
         public async Task<IEnumerable<Restaurant>> GetFilteredAsync(RestaurantFilterRequest filter, CancellationToken cancellationToken = default)
-{
-    var query = _dbContext.Restaurants.AsNoTracking().AsQueryable();
+        {
+          
+            var query = _dbContext.Restaurants
+                .Where(r => !r.IsDeleted)
+                .AsNoTracking()
+                .AsQueryable();
 
-    if (!string.IsNullOrWhiteSpace(filter.SearchTerm))
-        query = query.Where(r => r.Name.Contains(filter.SearchTerm));
+            if (!string.IsNullOrWhiteSpace(filter.SearchTerm))
+                query = query.Where(r => r.Name.Contains(filter.SearchTerm));
 
-    if (filter.CategoryId.HasValue)
-        query = query.Where(r => r.RestaurantCategories.Any(rc => rc.CategoryId == filter.CategoryId.Value));
+            if (filter.CategoryId.HasValue)
+                query = query.Where(r => r.RestaurantCategories.Any(rc => rc.CategoryId == filter.CategoryId.Value));
 
-    query = query
-        .Skip((filter.PageNumber - 1) * filter.PageSize)
-        .Take(filter.PageSize);
+            if (filter.ProductId.HasValue)
+                query = query.Where(r => r.Products.Any(p => p.Id == filter.ProductId.Value));
 
-    return  await query.ToListAsync(cancellationToken);
-}
+            
+            query = WithDetails(query);
+
+            var pageNumber = filter.PageNumber < 1 ? 1 : filter.PageNumber;
+            var pageSize = filter.PageSize < 1 ? 10 : Math.Min(filter.PageSize, 100);
+
+            query = query
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize);
+
+            return await query.ToListAsync(cancellationToken);
+        }
+
+        private static IQueryable<Restaurant> WithDetails(IQueryable<Restaurant> query)
+        {
+            return query
+                .Include(r => r.RestaurantCategories)
+                    .ThenInclude(rc => rc.Category)
+                        .ThenInclude(c => c!.Products)
+                .Include(r => r.Products)
+                .Include(r => r.Owner)
+                .Include(r => r.Ratings);
+        }
     }
-
 }

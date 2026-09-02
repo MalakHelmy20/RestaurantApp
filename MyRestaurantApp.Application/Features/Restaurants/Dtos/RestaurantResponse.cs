@@ -11,10 +11,14 @@ namespace MyRestaurantApp.Application.Features.Restaurants.Dtos
         public string Name { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
         public string Address { get; set; } = string.Empty;
+        public string Phone { get; set; } = string.Empty;
         public TimeSpan OpenTime { get; set; }
         public TimeSpan CloseTime { get; set; }
         public List<CategoryResponse> Categories { get; set; } = new();
           public List<ProductResponse> Products { get; set; } = new();
         public UserResponse Owner { get; set; } = null!;
+
+        public double AverageRating { get; set; }
+       public int TotalRatingsCount { get; set; }
     }
 }

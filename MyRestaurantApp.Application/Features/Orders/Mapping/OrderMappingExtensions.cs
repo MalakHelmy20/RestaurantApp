@@ -52,7 +52,7 @@ namespace MyRestaurantApp.Application.Features.Orders.Mapping
                 var product = products.FirstOrDefault(p => p.Id == item.ProductId);
                 if (product == null)
                 {
-                    throw new Exception($"Product {item.ProductId} not found.");
+                    throw new KeyNotFoundException($"Product {item.ProductId} not found.");
                 }
 
                 return new OrderItem
@@ -76,12 +76,43 @@ namespace MyRestaurantApp.Application.Features.Orders.Mapping
             };
         }
 
-                public static void UpdateStatus(this Order order, UpdateOrderRequest request)
+        public static void ApplyUpdate(this Order order, UpdateOrderRequest request, List<Product>? products = null)
         {
             ArgumentNullException.ThrowIfNull(order);
             ArgumentNullException.ThrowIfNull(request);
 
-            order.status = request.Status;
+            if (request.Status.HasValue)
+            {
+                order.status = request.Status.Value;
+            }
+
+            if (request.OrderItems == null)
+            {
+                return;
+            }
+
+            ArgumentNullException.ThrowIfNull(products);
+
+            var orderItems = request.OrderItems.Select(item =>
+            {
+                var product = products.FirstOrDefault(p => p.Id == item.ProductId);
+                if (product == null)
+                {
+                    throw new KeyNotFoundException($"Product {item.ProductId} not found.");
+                }
+
+                return new OrderItem
+                {
+                    Id = Guid.NewGuid(),
+                    ProductId = item.ProductId,
+                    Quantity = item.Quantity,
+                    UnitPrice = product.Price,
+                    OrderId = order.Id
+                };
+            }).ToList();
+
+            order.OrderItems = orderItems;
+            order.TotalPrice = orderItems.Sum(oi => oi.UnitPrice * oi.Quantity);
         }
 
         // 4. Convert a collection of Order Entities -> OrderResponse list

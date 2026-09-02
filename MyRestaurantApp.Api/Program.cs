@@ -1,6 +1,9 @@
+using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.EntityFrameworkCore;
 using MyRestaurantApp.Infrastructure;
-
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 // Repositories Interfaces
 using MyRestaurantApp.Application.Features.Users.IRepository;
 using MyRestaurantApp.Application.Features.Restaurants.IRepository;
@@ -64,6 +67,28 @@ builder.Services.AddScoped<IRatingService, RatingService>();
 // Register OpenAPI/Swagger services for API documentation (.NET 9+)
 builder.Services.AddOpenApi();
 
+
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        ValidIssuer = builder.Configuration["Jwt:Issuer"],
+        ValidAudience = builder.Configuration["Jwt:Audience"],
+        IssuerSigningKey = new SymmetricSecurityKey(
+            Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
+    };
+});
+builder.Services.AddAuthorization();
+
 var app = builder.Build();
 
 // Configure HTTP request pipeline for Development environment
@@ -79,7 +104,37 @@ if (app.Environment.IsDevelopment())
     });
 }
 
+app.UseExceptionHandler(errorApp =>
+{
+    errorApp.Run(async context =>
+    {
+        var exception = context.Features.Get<IExceptionHandlerFeature>()?.Error;
+        context.Response.ContentType = "application/json";
+
+        context.Response.StatusCode = exception switch
+        {
+            UnauthorizedAccessException => StatusCodes.Status401Unauthorized,
+            KeyNotFoundException => StatusCodes.Status404NotFound,
+            InvalidOperationException => StatusCodes.Status400BadRequest,
+            ArgumentException => StatusCodes.Status400BadRequest,
+            _ => StatusCodes.Status500InternalServerError
+        };
+
+        var message = context.Response.StatusCode == StatusCodes.Status500InternalServerError
+            ? "An unexpected error occurred."
+            : exception?.Message ?? "An error occurred.";
+
+        await context.Response.WriteAsJsonAsync(new { message });
+    });
+});
+
 app.UseHttpsRedirection();
+app.UseAuthentication();
+app.UseAuthorization();
 app.MapControllers();
+if (app.Environment.IsDevelopment())
+{
+    app.UseDeveloperExceptionPage();
+}
 
 app.Run();

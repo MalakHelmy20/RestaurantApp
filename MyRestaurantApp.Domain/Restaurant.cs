@@ -9,7 +9,7 @@ namespace MyRestaurantApp.Domain
        public Guid Id { get; set; }= Guid.NewGuid();
 
         public string Name { get; set; }=string.Empty;
-        public string   Phone { get; set; } = string.Empty;
+        public string  Phone { get; set; } = string.Empty;
 
         public string Address { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
@@ -17,7 +17,7 @@ namespace MyRestaurantApp.Domain
 
 
 
-
+      public bool IsDeleted { get; set; } = false;
         //interval of time for open and close time
         public TimeSpan OpenTime { get; set; }
         public TimeSpan CloseTime { get; set; }
@@ -51,6 +51,11 @@ namespace MyRestaurantApp.Domain
      //to know all the ratings
 
         public List<Rating> Ratings { get; set; } = new List<Rating>();
+        public double AverageRating => Ratings != null && Ratings.Any() 
+    ? Math.Round(Ratings.Average(r => (double)r.RatingValue), 1) 
+    : 0.0;
+
+public int TotalRatingsCount => Ratings?.Count ?? 0;
 
 
       public List<Product>Products{get;set;}=new List <Product>();

@@ -23,6 +23,8 @@ public class Order
         public DateTime OrderDate { get; set; } = DateTime.UtcNow;
         public decimal TotalPrice { get; set; }
 
+         public bool IsDeleted { get; set; } = false;
+
 
         //foreignkey & navigation property
         

@@ -26,14 +26,18 @@ namespace MyRestaurantApp.Api.Controllers
         [ProducesResponseType(typeof(RestaurantResponse), StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        [Authorize(Roles = "SystemAdmin")]
+        [Authorize(Roles = "SystemAdmin,RestaurantOwner")]
         public async Task<IActionResult> Create([FromBody] CreateRestaurantRequest request, CancellationToken cancellationToken)
         {
-            // Extract current admin user ID from Claims
             var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (!Guid.TryParse(currentUserId, out var userIdGuid))
             {
                 return Unauthorized();
+            }
+
+            if (!User.IsInRole("SystemAdmin"))
+            {
+                request.OwnerId = userIdGuid;
             }
 
             var restaurant = await _restaurantService.CreateAsync(request, userIdGuid, cancellationToken);

@@ -37,6 +37,24 @@ namespace MyRestaurantApp.Infrastructure
             modelBuilder.Entity<RestaurantCategory>()
                 .HasKey(rc => new { rc.RestaurantId, rc.CategoryId });
 
+            modelBuilder.Entity<User>()
+                .HasQueryFilter(u => !u.IsDeleted);
+            modelBuilder.Entity<Restaurant>()
+                .HasQueryFilter(r => !r.IsDeleted);
+            modelBuilder.Entity<Product>()
+                .HasQueryFilter(p => !p.IsDeleted);
+            modelBuilder.Entity<Category>()
+                .HasQueryFilter(c => !c.IsDeleted);
+            modelBuilder.Entity<Order>()
+                .HasQueryFilter(o => !o.IsDeleted);
+            modelBuilder.Entity<Rating>()
+                .HasQueryFilter(r => !r.IsDeleted);
+
+            modelBuilder.Entity<Rating>()
+                .HasIndex(r => new { r.UserId, r.RestaurantId })
+                .IsUnique()
+                .HasFilter("[IsDeleted] = 0");
+
             modelBuilder.Entity<Rating>()
                 .Property(r => r.RatingValue)
                 .HasDefaultValue(5);
@@ -44,31 +62,43 @@ namespace MyRestaurantApp.Infrastructure
             modelBuilder.Entity<Rating>()
                 .ToTable(t => t.HasCheckConstraint("CK_Ratings_Rating", "[RatingValue] >= 1 AND [RatingValue] <= 5"));
 
-            // Prevent cascade delete path for Order and Restaurant relationship
             modelBuilder.Entity<Order>()
                 .HasOne(o => o.Customer)
-                .WithMany()
+                .WithMany(u => u.Orders)
                 .HasForeignKey(o => o.CustomerId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<Order>()
                 .HasOne(o => o.Restaurant)
-                .WithMany()
+                .WithMany(r => r.Orders)
                 .HasForeignKey(o => o.RestaurantId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // Prevent cascade delete from Rating to User and Restaurant
             modelBuilder.Entity<Rating>()
                 .HasOne(r => r.User)
-                .WithMany()
+                .WithMany(u => u.Ratings)
                 .HasForeignKey(r => r.UserId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<Rating>()
                 .HasOne(r => r.Restaurant)
-                .WithMany()
+                .WithMany(r => r.Ratings)
                 .HasForeignKey(r => r.RestaurantId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Restaurant>()
+                .HasOne(r => r.Owner)
+                .WithMany()
+                .HasForeignKey(r => r.OwnerId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<User>()
+                .Property(u => u.Role)
+                .HasConversion<string>();
+
+            modelBuilder.Entity<Order>()
+                .Property(o => o.status)
+                .HasConversion<string>();
         }
     }
 }

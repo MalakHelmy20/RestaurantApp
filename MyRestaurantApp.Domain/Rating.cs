@@ -9,6 +9,8 @@ public class Rating
     //foreign key & navigation property
     public Guid UserId { get; set; }
     public User User { get; set; } = null!;
+
+     public bool IsDeleted { get; set; } = false;
     
     //fk & navigation property
     public Guid RestaurantId { get; set; }

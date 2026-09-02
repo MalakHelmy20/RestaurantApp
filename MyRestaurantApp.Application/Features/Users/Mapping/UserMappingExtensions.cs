@@ -17,6 +17,7 @@ namespace MyRestaurantApp.Application.Features.Users.Mapping
                 LastName = user.LastName,
                 Email = user.Email,
                 Phone = user.Phone,
+                Address = user.Address ?? string.Empty,
                 Role = user.Role.ToString()
             };
         }
@@ -32,6 +33,7 @@ namespace MyRestaurantApp.Application.Features.Users.Mapping
                 Email = request.Email,
                 Phone = request.Phone,
                 Password = passwordHash,
+                Address = request.Address ?? string.Empty,
                 Role = UserRole.Customer
             };
         }
@@ -48,6 +50,7 @@ namespace MyRestaurantApp.Application.Features.Users.Mapping
                 Phone = request.Phone,
                 Password = passwordHash,
                 Role = request.Role,
+                Address = request.Address ?? string.Empty,
                 CreatedBy = createdByUserId,
                 CreatedAt = DateTime.UtcNow
             };
@@ -65,15 +68,14 @@ namespace MyRestaurantApp.Application.Features.Users.Mapping
 
     if (request.Phone != null)
         existingUser.Phone = request.Phone;
+        
+    if (request.Address != null)
+     existingUser.Address = request.Address;
 
-    return existingUser;
+     return existingUser;
+
+    
 }
-        public static User ToEntity(this LoginRequest request, User existingUser, string passwordHash)
-        {
-            existingUser.Password = passwordHash;
-            existingUser.Email = request.Email;
-
-            return existingUser;
-        }
+   
     }
 }

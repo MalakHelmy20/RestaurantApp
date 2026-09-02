@@ -13,8 +13,6 @@ namespace MyRestaurantApp.Application.Features.Ratings.Services
         Task<IEnumerable<RatingResponse>> GetAllAsync(CancellationToken cancellationToken = default);
         Task<bool> UpdateAsync(Guid restaurantId, UpdateRatingRequest request, Guid updatedByUserId, CancellationToken cancellationToken = default);
         Task<bool> DeleteAsync(Guid restaurantId, CancellationToken cancellationToken = default);
-
-
-        
+        Task<IEnumerable<RatingResponse>> GetByRestaurantIdAsync(Guid restaurantId, CancellationToken cancellationToken = default);
     }
 }

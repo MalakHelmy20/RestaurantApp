@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using MyRestaurantApp.Infrastructure;
 
@@ -10,10 +11,12 @@ using MyRestaurantApp.Infrastructure;
 
 namespace MyRestaurantApp.Infrastructure.Migrations
 {
-    [DbContext(typeof(AppContext))]
-    partial class AppContextModelSnapshot : ModelSnapshot
+    [DbContext(typeof(AppDbContext))]
+    [Migration("20260901192813_FixDuplicateForeignKeys")]
+    partial class FixDuplicateForeignKeys
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -39,6 +42,9 @@ namespace MyRestaurantApp.Infrastructure.Migrations
 
                     b.Property<Guid?>("DeletedBy")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -76,13 +82,13 @@ namespace MyRestaurantApp.Infrastructure.Migrations
                     b.Property<Guid?>("DeletedBy")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
                     b.Property<DateTime>("OrderDate")
                         .HasColumnType("datetime2");
 
                     b.Property<Guid>("RestaurantId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid?>("RestaurantId1")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<decimal>("TotalPrice")
@@ -94,21 +100,15 @@ namespace MyRestaurantApp.Infrastructure.Migrations
                     b.Property<Guid?>("UpdatedBy")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid?>("UserId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<int>("status")
-                        .HasColumnType("int");
+                    b.Property<string>("status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
                     b.HasIndex("CustomerId");
 
                     b.HasIndex("RestaurantId");
-
-                    b.HasIndex("RestaurantId1");
-
-                    b.HasIndex("UserId");
 
                     b.ToTable("Orders");
                 });
@@ -186,12 +186,18 @@ namespace MyRestaurantApp.Infrastructure.Migrations
                     b.Property<bool>("IsAvailable")
                         .HasColumnType("bit");
 
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<decimal>("UnitPrice")
+                    b.Property<decimal>("Price")
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<Guid>("RestaurantId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -202,6 +208,8 @@ namespace MyRestaurantApp.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CategoryId");
+
+                    b.HasIndex("RestaurantId");
 
                     b.ToTable("Products");
                 });
@@ -224,15 +232,15 @@ namespace MyRestaurantApp.Infrastructure.Migrations
                     b.Property<Guid?>("DeletedBy")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
                     b.Property<int>("RatingValue")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int")
                         .HasDefaultValue(5);
 
                     b.Property<Guid>("RestaurantId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid?>("RestaurantId1")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime?>("UpdatedAt")
@@ -244,18 +252,11 @@ namespace MyRestaurantApp.Infrastructure.Migrations
                     b.Property<Guid>("UserId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid?>("UserId1")
-                        .HasColumnType("uniqueidentifier");
-
                     b.HasKey("Id");
 
                     b.HasIndex("RestaurantId");
 
-                    b.HasIndex("RestaurantId1");
-
                     b.HasIndex("UserId");
-
-                    b.HasIndex("UserId1");
 
                     b.ToTable("Ratings", t =>
                         {
@@ -291,6 +292,9 @@ namespace MyRestaurantApp.Infrastructure.Migrations
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -340,6 +344,10 @@ namespace MyRestaurantApp.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<string>("Address")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -372,8 +380,9 @@ namespace MyRestaurantApp.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("Role")
-                        .HasColumnType("int");
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -389,24 +398,16 @@ namespace MyRestaurantApp.Infrastructure.Migrations
             modelBuilder.Entity("MyRestaurantApp.Domain.Order", b =>
                 {
                     b.HasOne("MyRestaurantApp.Domain.User", "Customer")
-                        .WithMany()
+                        .WithMany("Orders")
                         .HasForeignKey("CustomerId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("MyRestaurantApp.Domain.Restaurant", "Restaurant")
-                        .WithMany()
+                        .WithMany("Orders")
                         .HasForeignKey("RestaurantId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
-
-                    b.HasOne("MyRestaurantApp.Domain.Restaurant", null)
-                        .WithMany("Orders")
-                        .HasForeignKey("RestaurantId1");
-
-                    b.HasOne("MyRestaurantApp.Domain.User", null)
-                        .WithMany("Orders")
-                        .HasForeignKey("UserId");
 
                     b.Navigation("Customer");
 
@@ -440,30 +441,30 @@ namespace MyRestaurantApp.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("MyRestaurantApp.Domain.Restaurant", "Restaurant")
+                        .WithMany("Products")
+                        .HasForeignKey("RestaurantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.Navigation("Category");
+
+                    b.Navigation("Restaurant");
                 });
 
             modelBuilder.Entity("MyRestaurantApp.Domain.Rating", b =>
                 {
                     b.HasOne("MyRestaurantApp.Domain.Restaurant", "Restaurant")
-                        .WithMany()
+                        .WithMany("Ratings")
                         .HasForeignKey("RestaurantId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("MyRestaurantApp.Domain.Restaurant", null)
-                        .WithMany("Ratings")
-                        .HasForeignKey("RestaurantId1");
-
                     b.HasOne("MyRestaurantApp.Domain.User", "User")
-                        .WithMany()
+                        .WithMany("Ratings")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
-
-                    b.HasOne("MyRestaurantApp.Domain.User", null)
-                        .WithMany("Ratings")
-                        .HasForeignKey("UserId1");
 
                     b.Navigation("Restaurant");
 
@@ -520,6 +521,8 @@ namespace MyRestaurantApp.Infrastructure.Migrations
             modelBuilder.Entity("MyRestaurantApp.Domain.Restaurant", b =>
                 {
                     b.Navigation("Orders");
+
+                    b.Navigation("Products");
 
                     b.Navigation("Ratings");
 

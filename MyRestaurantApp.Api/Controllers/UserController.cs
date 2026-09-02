@@ -57,9 +57,9 @@ namespace MyRestaurantApp.Api.Controllers
         [ProducesResponseType(typeof(IEnumerable<UserResponse>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
+        public async Task<IActionResult> GetAll([FromQuery] string? role, CancellationToken cancellationToken)
         {
-            var users = await _userService.GetAllAsync(cancellationToken);
+            var users = await _userService.GetAllAsync(role ,cancellationToken);
             return Ok(users);
         }
 

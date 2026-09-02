@@ -143,6 +143,17 @@ namespace MyRestaurantApp.Api.Controllers
                 return NotFound($"Category with ID {id} was not found.");
             }
 
+            var restaurant = await _restaurantService.GetByIdAsync(category.RestaurantId, cancellationToken);
+            if (restaurant == null)
+            {
+                return NotFound($"Associated restaurant with ID {category.RestaurantId} was not found.");
+            }
+
+            if (!User.IsInRole("SystemAdmin") && restaurant.Owner?.Id != userIdGuid)
+            {
+                return Forbid();
+            }
+
             var isDeleted = await _categoryService.DeleteAsync(id, cancellationToken);
             if (!isDeleted)
             {

@@ -31,5 +31,9 @@ namespace MyRestaurantApp.Application.Features.Users.Dtos
         [Required(ErrorMessage = "Confirm password is required.")]
         [Compare("Password", ErrorMessage = "Passwords do not match.")]
         public string confirmPassword { get; set; } = null!;
+
+         
+     [StringLength(200, ErrorMessage = "Address cannot exceed 200 characters.")]
+        public  string?Address { get; set; }
     }
 }

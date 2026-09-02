@@ -11,9 +11,9 @@ using MyRestaurantApp.Infrastructure;
 
 namespace MyRestaurantApp.Infrastructure.Migrations
 {
-    [DbContext(typeof(AppContext))]
-    [Migration("20260808124850_InitialCreate")]
-    partial class InitialCreate
+    [DbContext(typeof(AppDbContext))]
+    [Migration("20260901102341_AddSoftDeleteToRestaurant")]
+    partial class AddSoftDeleteToRestaurant
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -100,8 +100,9 @@ namespace MyRestaurantApp.Infrastructure.Migrations
                     b.Property<Guid?>("UserId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<int>("status")
-                        .HasColumnType("int");
+                    b.Property<string>("status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
@@ -193,8 +194,11 @@ namespace MyRestaurantApp.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<decimal>("UnitPrice")
+                    b.Property<decimal>("Price")
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<Guid>("RestaurantId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -205,6 +209,8 @@ namespace MyRestaurantApp.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CategoryId");
+
+                    b.HasIndex("RestaurantId");
 
                     b.ToTable("Products");
                 });
@@ -295,6 +301,9 @@ namespace MyRestaurantApp.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -343,6 +352,10 @@ namespace MyRestaurantApp.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<string>("Address")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -375,8 +388,9 @@ namespace MyRestaurantApp.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("Role")
-                        .HasColumnType("int");
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -443,7 +457,15 @@ namespace MyRestaurantApp.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("MyRestaurantApp.Domain.Restaurant", "Restaurant")
+                        .WithMany("Products")
+                        .HasForeignKey("RestaurantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.Navigation("Category");
+
+                    b.Navigation("Restaurant");
                 });
 
             modelBuilder.Entity("MyRestaurantApp.Domain.Rating", b =>
@@ -523,6 +545,8 @@ namespace MyRestaurantApp.Infrastructure.Migrations
             modelBuilder.Entity("MyRestaurantApp.Domain.Restaurant", b =>
                 {
                     b.Navigation("Orders");
+
+                    b.Navigation("Products");
 
                     b.Navigation("Ratings");
 

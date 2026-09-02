@@ -1,5 +1,4 @@
 
-
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -26,12 +25,12 @@ namespace MyRestaurantApp.Infrastructure.Repository.ProductRepo
 
         }
 
-        
-       
         public async Task<Product?>GetByIdAsync(Guid productId,CancellationToken cancellationToken = default)
         {
-            var product= await _dbContext.Set<Product>().SingleOrDefaultAsync(x=>x.Id==productId,cancellationToken);
-            return product;
+            return await _dbContext.Products
+                .Include(p => p.Category)
+                .AsNoTracking()
+                .SingleOrDefaultAsync(x => x.Id == productId, cancellationToken);
         }
 
   public async Task<IEnumerable<Product>> GetByIdsAsync(IEnumerable<Guid> productIds, CancellationToken cancellationToken = default)
@@ -44,8 +43,9 @@ namespace MyRestaurantApp.Infrastructure.Repository.ProductRepo
         public async Task<IEnumerable<Product>>GetAllAsync(CancellationToken cancellationToken = default)
         {
             return await _dbContext.Products
-        .AsNoTracking()
-        .ToListAsync(cancellationToken);
+                .Include(p => p.Category)
+                .AsNoTracking()
+                .ToListAsync(cancellationToken);
         }
 
           public  async Task<bool> UpdateAsync(Product product, CancellationToken cancellationToken = default) 
@@ -53,7 +53,7 @@ namespace MyRestaurantApp.Infrastructure.Repository.ProductRepo
             var existingProduct=await _dbContext.Products.FirstOrDefaultAsync(x=>x.Id==product.Id,cancellationToken);
             if (existingProduct is null)
             {
-               return    false;    //_dbContext.Products.Update(product);
+               return    false;
             }
           _dbContext.Entry(existingProduct).CurrentValues.SetValues(product);
          return await _dbContext.SaveChangesAsync(cancellationToken)>0;
@@ -67,25 +67,50 @@ namespace MyRestaurantApp.Infrastructure.Repository.ProductRepo
             {
                 return false;
             }
-            _dbContext.Products.Remove(product);
+            product.IsDeleted = true;
+            product.DeletedAt = DateTime.UtcNow;
             return await _dbContext.SaveChangesAsync(cancellationToken)>0;
         } 
 
     public async Task<IEnumerable<Product>> GetFilteredAsync(ProductFilterRequest filter, CancellationToken cancellationToken = default)
 {
-    var query = _dbContext.Products.AsNoTracking().AsQueryable();
-
+    var query = _dbContext.Products
+        .Include(p => p.Category)
+        .AsNoTracking()
+        .AsQueryable();
 
     if (!string.IsNullOrWhiteSpace(filter.SearchTerm))
     {
         query = query.Where(p => p.Name.Contains(filter.SearchTerm));
     }
 
-    var result = query
-        .Skip((filter.PageNumber - 1) * filter.PageSize)
-        .Take(filter.PageSize);
+    if (filter.CategoryId.HasValue)
+    {
+        query = query.Where(p => p.CategoryId == filter.CategoryId.Value);
+    }
 
-    return  await query.ToListAsync(cancellationToken);
+    if (filter.RestaurantId.HasValue)
+    {
+        query = query.Where(p => p.RestaurantId == filter.RestaurantId.Value);
+    }
+
+    if (filter.Price.HasValue)
+    {
+        query = query.Where(p => p.Price <= filter.Price.Value);
+    }
+
+    if (filter.IsAvailable.HasValue)
+    {
+        query = query.Where(p => p.IsAvailable == filter.IsAvailable.Value);
+    }
+
+    var pageNumber = filter.PageNumber < 1 ? 1 : filter.PageNumber;
+    var pageSize = filter.PageSize < 1 ? 10 : Math.Min(filter.PageSize, 100);
+
+    return await query
+        .Skip((pageNumber - 1) * pageSize)
+        .Take(pageSize)
+        .ToListAsync(cancellationToken);
 }
     }
 }

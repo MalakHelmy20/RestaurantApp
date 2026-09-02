@@ -12,7 +12,7 @@ public interface IUserService
     Task<LoginResponse> LoginAsync(LoginRequest request, CancellationToken cancellationToken = default);
     Task<UserResponse> CreateAsync(CreateUserRequest request, Guid createdByUserId,CancellationToken cancellationToken = default);
     Task<bool> UpdateAsync( Guid userId,UpdateUserRequest request, Guid updatedByUserId, CancellationToken cancellationToken = default);
-    Task<IEnumerable<UserResponse>> GetAllAsync(CancellationToken cancellationToken = default);
+    Task<IEnumerable<UserResponse>> GetAllAsync(string? role = null,CancellationToken cancellationToken = default);
     Task<bool> DeleteAsync(Guid userId,CancellationToken cancellationToken = default);
 
     Task<UserResponse?> GetByIdAsync(Guid userId, CancellationToken cancellationToken = default);

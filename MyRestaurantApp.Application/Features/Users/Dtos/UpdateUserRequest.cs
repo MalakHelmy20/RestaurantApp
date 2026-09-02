@@ -26,5 +26,9 @@ namespace MyRestaurantApp.Application.Features.Users.Dtos
     @"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$",
     ErrorMessage = "Password must be 8+ chars with upper, lower, number & symbol.")]
     public string? Password { get; set; }
+ 
+   [StringLength(200, ErrorMessage = "Address cannot exceed 200 characters.")]
+   public string? Address { get; set; }
+    
 }
 }

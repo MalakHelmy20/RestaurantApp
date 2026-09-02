@@ -56,6 +56,15 @@ namespace MyRestaurantApp.Api.Controllers
             return Ok(rating);
         }
 
+        [HttpGet("restaurant/{restaurantId:guid}")]
+        [ProducesResponseType(typeof(IEnumerable<RatingResponse>), StatusCodes.Status200OK)]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetByRestaurantId(Guid restaurantId, CancellationToken cancellationToken)
+        {
+            var ratings = await _ratingService.GetByRestaurantIdAsync(restaurantId, cancellationToken);
+            return Ok(ratings);
+        }
+
         [HttpGet]
         [ProducesResponseType(typeof(IEnumerable<RatingResponse>), StatusCodes.Status200OK)]
         [Authorize(Roles = "SystemAdmin")]

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
@@ -26,20 +27,23 @@ namespace MyRestaurantApp.Infrastructure.Repository.OrderRepo
 
         public async Task<Order?> GetByIdAsync(Guid orderId, CancellationToken cancellationToken = default)
         {
-            return await _dbContext.Orders
+            return await WithDetails(_dbContext.Orders)
+                .AsNoTracking()
                 .FirstOrDefaultAsync(x => x.Id == orderId, cancellationToken);
         }
 
         public async Task<IEnumerable<Order>> GetAllAsync(CancellationToken cancellationToken = default)
         {
-            return await _dbContext.Orders
+            return await WithDetails(_dbContext.Orders)
                 .AsNoTracking()
                 .ToListAsync(cancellationToken);
         }
 
         public async Task<bool> UpdateAsync(Order order, CancellationToken cancellationToken = default) 
         {
+            //make it tracked
             var existingOrder = await _dbContext.Orders
+                .Include(o => o.OrderItems)
                 .FirstOrDefaultAsync(x => x.Id == order.Id, cancellationToken);
 
             if (existingOrder is null)
@@ -47,7 +51,31 @@ namespace MyRestaurantApp.Infrastructure.Repository.OrderRepo
                 return false;
             }
 
-            _dbContext.Entry(existingOrder).CurrentValues.SetValues(order);
+         
+            existingOrder.status = order.status;
+            existingOrder.TotalPrice = order.TotalPrice;
+            existingOrder.UpdatedAt = order.UpdatedAt;
+            existingOrder.UpdatedBy = order.UpdatedBy;
+
+            // remove the olditems from database
+            if (existingOrder.OrderItems.Any())
+            {
+                _dbContext.OrderItems.RemoveRange(existingOrder.OrderItems);
+            }
+
+           
+            foreach (var item in order.OrderItems)
+            {
+                _dbContext.OrderItems.Add(new OrderItem
+                {
+                    Id = Guid.NewGuid(), 
+                    ProductId = item.ProductId,
+                    Quantity = item.Quantity,
+                    UnitPrice = item.UnitPrice,
+                    OrderId = existingOrder.Id
+                });
+            }
+
             return await _dbContext.SaveChangesAsync(cancellationToken) > 0;
         }
 
@@ -61,8 +89,18 @@ namespace MyRestaurantApp.Infrastructure.Repository.OrderRepo
                 return false;
             }
 
-            _dbContext.Orders.Remove(order);
+            order.IsDeleted = true;
+            order.DeletedAt = DateTime.UtcNow;
             return await _dbContext.SaveChangesAsync(cancellationToken) > 0;
-        } 
+        }
+
+        private static IQueryable<Order> WithDetails(IQueryable<Order> query)
+        {
+            return query
+                .Include(o => o.OrderItems)
+                    .ThenInclude(oi => oi.Product)
+                .Include(o => o.Customer)
+                .Include(o => o.Restaurant);
+        }
     }
 }

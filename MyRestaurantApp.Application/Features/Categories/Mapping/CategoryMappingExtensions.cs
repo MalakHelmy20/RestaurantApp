@@ -38,31 +38,33 @@ namespace MyRestaurantApp.Application.Features.Categories.Mapping
 
        public static void UpdateEntity(this UpdateCategoryRequest request, Category category)
 {
-    if (!string.IsNullOrWhiteSpace(request.Name))
-    {
-        category.Name = request.Name;
-    }
-
-  
-    if (request.RestaurantId != Guid.Empty)
-    {
-        
-        category.RestaurantCategories ??= new List<RestaurantCategory>();
-
-        var existingRelation = category.RestaurantCategories.FirstOrDefault();
-        if (existingRelation != null)
+        if (!string.IsNullOrWhiteSpace(request.Name))
         {
-            existingRelation.RestaurantId = request.RestaurantId;
+            category.Name = request.Name;
         }
-        else
+
+        if (request.RestaurantId != Guid.Empty)
         {
-            category.RestaurantCategories.Add(new RestaurantCategory
+            category.RestaurantCategories ??= new List<RestaurantCategory>();
+
+            var relationsToRemove = category.RestaurantCategories
+                .Where(rc => rc.RestaurantId != request.RestaurantId)
+                .ToList();
+
+            foreach (var relation in relationsToRemove)
             {
-                RestaurantId = request.RestaurantId,
-                CategoryId = category.Id
-            });
+                category.RestaurantCategories.Remove(relation);
+            }
+
+            if (!category.RestaurantCategories.Any(rc => rc.RestaurantId == request.RestaurantId))
+            {
+                category.RestaurantCategories.Add(new RestaurantCategory
+                {
+                    RestaurantId = request.RestaurantId,
+                    CategoryId = category.Id
+                });
+            }
         }
-    }
 }
     }
 }

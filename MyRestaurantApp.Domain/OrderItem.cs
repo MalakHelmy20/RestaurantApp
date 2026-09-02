@@ -13,6 +13,7 @@ namespace MyRestaurantApp.Domain
         //foreignkey & navigation property
         public Guid OrderId { get; set; }
         public Order Order { get; set; } = null!;
+        public decimal TotalPrice => Quantity * UnitPrice;
 
 
         public Guid ProductId { get; set; }

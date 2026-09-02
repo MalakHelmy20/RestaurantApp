@@ -30,5 +30,8 @@ namespace MyRestaurantApp.Application.Features.Users.Dtos
         [Required(ErrorMessage = "Role is required.")]
         [EnumDataType(typeof(UserRole), ErrorMessage = "Invalid user role specified.")]
         public required UserRole Role { get; set; }
+ 
+ [StringLength(200, ErrorMessage = "Address cannot exceed 200 characters.")]
+        public string Address { get; set; } = string.Empty;
     }
 }

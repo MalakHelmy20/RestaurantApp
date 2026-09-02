@@ -14,6 +14,8 @@ namespace MyRestaurantApp.Domain
         public decimal Price { get; set; }
         public bool IsAvailable { get; set; }
 
+         public bool IsDeleted { get; set; } = false;
+
         //foreignkey & navigation property
         public Guid CategoryId { get; set; }
         public Category Category { get; set; } = null!;

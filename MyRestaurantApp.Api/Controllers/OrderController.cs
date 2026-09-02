@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Mvc;
 using MyRestaurantApp.Application.Features.Orders.Dtos;
 using MyRestaurantApp.Application.Features.Orders.Services;
 using MyRestaurantApp.Application.Features.Restaurants.Services;
+using MyRestaurantApp.Domain;
 
 namespace MyRestaurantApp.Api.Controllers
 {
@@ -87,7 +88,7 @@ namespace MyRestaurantApp.Api.Controllers
         [ProducesResponseType(typeof(IEnumerable<OrderResponse>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        [Authorize(Roles = "SystemAdmin,RestaurantOwner")]
+        [Authorize(Roles = "SystemAdmin,RestaurantOwner,Customer")]
         public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
         {
             var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -103,15 +104,23 @@ namespace MyRestaurantApp.Api.Controllers
                 return Ok(allOrders);
             }
 
-            var allRestaurants = await _restaurantService.GetAllAsync(cancellationToken);
-            var ownerRestaurant = allRestaurants.FirstOrDefault(r => r.Owner != null && r.Owner.Id == ownerGuid);
+            if (User.IsInRole("Customer"))
+            {
+                return Ok(allOrders.Where(o => o.CustomerId == ownerGuid));
+            }
 
-            if (ownerRestaurant == null)
+            var allRestaurants = await _restaurantService.GetAllAsync(cancellationToken);
+            var ownerRestaurantIds = allRestaurants
+                .Where(r => r.Owner != null && r.Owner.Id == ownerGuid)
+                .Select(r => r.Id)
+                .ToHashSet();
+
+            if (ownerRestaurantIds.Count == 0)
             {
                 return NotFound("No restaurant found for the current owner.");
             }
 
-            var ownerOrders = allOrders.Where(o => o.RestaurantId == ownerRestaurant.Id);
+            var ownerOrders = allOrders.Where(o => ownerRestaurantIds.Contains(o.RestaurantId));
             return Ok(ownerOrders);
         }
 
@@ -121,10 +130,12 @@ namespace MyRestaurantApp.Api.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        [Authorize(Roles = "Customer")]
+        [Authorize(Roles = "SystemAdmin,RestaurantOwner,Customer")]
         public async Task<IActionResult> Update(Guid id, [FromBody] UpdateOrderRequest request, CancellationToken cancellationToken)
         {
-            var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                                ?? User.FindFirst("sub")?.Value;
+
             if (!Guid.TryParse(currentUserId, out var userIdGuid))
             {
                 return Unauthorized();
@@ -136,9 +147,39 @@ namespace MyRestaurantApp.Api.Controllers
                 return NotFound($"Order with ID {id} was not found.");
             }
 
-            if (order.CustomerId != userIdGuid)
+            if (User.IsInRole("Customer"))
             {
-                return Forbid();
+                if (order.CustomerId != userIdGuid)
+                {
+                    return Forbid();
+                }
+
+                if (order.Status != statusTypes.confirm.ToString())
+                {
+                    return BadRequest("You can only modify or cancel orders that are still confirm.");
+                }
+
+                if (request.Status.HasValue && request.Status != statusTypes.cancelled)
+                {
+                    return BadRequest("Only SystemAdmin and RestaurantOwner can change order status. Customers can update items without sending status, or set status to cancelled.");
+                }
+            }
+            else if (User.IsInRole("RestaurantOwner") && !User.IsInRole("SystemAdmin"))
+            {
+                var restaurant = await _restaurantService.GetByIdAsync(order.RestaurantId, cancellationToken);
+                if (restaurant == null || restaurant.Owner?.Id != userIdGuid)
+                {
+                    return Forbid();
+                }
+
+                if (request.OrderItems != null)
+                {
+                    return BadRequest("Restaurant owners can only update order status.");
+                }
+            }
+            else if (User.IsInRole("SystemAdmin") && request.OrderItems != null)
+            {
+                return BadRequest("SystemAdmin can only update order status.");
             }
 
             var isUpdated = await _orderService.UpdateAsync(id, request, userIdGuid, cancellationToken);
@@ -147,15 +188,16 @@ namespace MyRestaurantApp.Api.Controllers
                 return NotFound($"Order with ID {id} was not found.");
             }
 
-            return Ok(isUpdated);
+            return Ok(new { Message = "Order updated successfully.", Updated = isUpdated });
         }
+
 
         [HttpDelete("{id:guid}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        [Authorize(Roles = "Customer")]
+        [Authorize(Roles = "SystemAdmin,Customer")]
         public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
         {
             var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -170,7 +212,7 @@ namespace MyRestaurantApp.Api.Controllers
                 return NotFound($"Order with ID {id} was not found.");
             }
 
-            if (order.CustomerId != userIdGuid)
+            if (!User.IsInRole("SystemAdmin") && order.CustomerId != userIdGuid)
             {
                 return Forbid();
             }

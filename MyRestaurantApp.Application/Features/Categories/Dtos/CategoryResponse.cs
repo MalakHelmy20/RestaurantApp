@@ -14,6 +14,6 @@ namespace MyRestaurantApp.Application.Features.Categories.Dtos
   
         public int TotalProducts { get; set; }
 
-        public Guid RestaurantId;
+        public Guid RestaurantId { get; set; }
     }
 }

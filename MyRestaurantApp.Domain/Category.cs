@@ -7,6 +7,8 @@ namespace MyRestaurantApp.Domain
     public class Category
     {
 
+
+    public bool IsDeleted { get; set; } = false;
         public Guid Id { get; set; } = Guid.NewGuid();
         public string Name { get; set; } = string.Empty;
 

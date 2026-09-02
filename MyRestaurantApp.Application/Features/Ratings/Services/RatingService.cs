@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using MyRestaurantApp.Application.Features.Ratings.Dtos;
 using MyRestaurantApp.Application.Features.Ratings.Mapping;
 using MyRestaurantApp.Application.Features.Ratings.IRepository;
+using MyRestaurantApp.Application.Features.Restaurants.IRepository;
 using MyRestaurantApp.Domain;
 
 namespace MyRestaurantApp.Application.Features.Ratings.Services
@@ -13,14 +14,28 @@ namespace MyRestaurantApp.Application.Features.Ratings.Services
     public class RatingService : IRatingService
     {
         private readonly IRatingRepository _ratingRepository;
+        private readonly IRestaurantRepository _restaurantRepository;
 
-        public RatingService(IRatingRepository ratingRepository)
+        public RatingService(IRatingRepository ratingRepository, IRestaurantRepository restaurantRepository)
         {
             _ratingRepository = ratingRepository;
+            _restaurantRepository = restaurantRepository;
         }
 
         public async Task<RatingResponse> CreateAsync(CreateRatingRequest request, Guid createdByUserId, CancellationToken cancellationToken = default)
         {
+            var restaurant = await _restaurantRepository.GetByIdAsync(request.RestaurantId, cancellationToken);
+            if (restaurant == null)
+            {
+                throw new KeyNotFoundException("Restaurant was not found.");
+            }
+
+            var existingRating = await _ratingRepository.GetByUserAndRestaurantAsync(createdByUserId, request.RestaurantId, cancellationToken);
+            if (existingRating != null)
+            {
+                throw new InvalidOperationException("You have already rated this restaurant.");
+            }
+
             var rating = request.ToEntity(createdByUserId);
             rating.CreatedAt = DateTime.UtcNow;
             rating.CreatedBy = createdByUserId;
@@ -46,7 +61,7 @@ namespace MyRestaurantApp.Application.Features.Ratings.Services
             var rating = await _ratingRepository.GetByIdAsync(ratingId, cancellationToken);
             if (rating == null)
             {
-                throw new Exception("Rating not found.");
+                throw new KeyNotFoundException("Rating not found.");
             }
 
             rating.UpdateEntity(request, updatedByUserId);
@@ -59,7 +74,7 @@ namespace MyRestaurantApp.Application.Features.Ratings.Services
             var rating = await _ratingRepository.GetByIdAsync(ratingId, cancellationToken);
             if (rating == null)
             {
-                throw new Exception("Rating not found.");
+                throw new KeyNotFoundException("Rating not found.");
             }
 
             return await _ratingRepository.DeleteAsync(ratingId, cancellationToken);
