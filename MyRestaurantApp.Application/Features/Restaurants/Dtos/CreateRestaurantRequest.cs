@@ -28,10 +28,10 @@ namespace MyRestaurantApp.Application.Features.Restaurants.Dtos
         //OPENTIME < CLOSETIME VALIDATION
         public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
         {
-            if (OpenTime.HasValue && CloseTime.HasValue && CloseTime <= OpenTime)
+            if (OpenTime.HasValue && CloseTime.HasValue && CloseTime == OpenTime)
             {
                 yield return new ValidationResult(
-                    "Close time must be after open time.",
+                    "Close time cannot be the same as open time.",
                     new[] { nameof(CloseTime) }
                 );
             }

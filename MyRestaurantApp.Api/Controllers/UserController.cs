@@ -99,8 +99,8 @@ namespace MyRestaurantApp.Api.Controllers
         }
 
         [HttpPut("{userId:guid}")]
-        [Authorize(Roles = "SystemAdmin")]
-        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [Authorize]
+         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -113,15 +113,21 @@ namespace MyRestaurantApp.Api.Controllers
                 return Unauthorized();
             }
 
+            var isAdmin = User.IsInRole("SystemAdmin");
+            if (!isAdmin && userId != updatedByUserId)
+            {
+                return Forbid();
+            }
+
             var result = await _userService.UpdateAsync(userId, request, updatedByUserId, cancellationToken);
             if (!result)
             {
                 return NotFound(new { message = "User not found." });
             }
 
-            return NoContent();
+            return NoContent() ;
         }
-
+       
         [HttpDelete("{userId:guid}")]
         [Authorize(Roles = "SystemAdmin")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]

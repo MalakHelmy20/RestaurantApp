@@ -75,7 +75,7 @@ namespace MyRestaurantApp.Api.Controllers
         }
 
         [HttpPut("{id:guid}")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
@@ -104,17 +104,17 @@ namespace MyRestaurantApp.Api.Controllers
             }
 
             // 4. Perform update operation
-            var isUpdated = await _ratingService.UpdateAsync(id, request, userIdGuid, cancellationToken);
-            if (!isUpdated)
+            var result = await _ratingService.UpdateAsync(id, request, userIdGuid, cancellationToken);
+            if (!result)
             {
                 return NotFound($"Rating with ID {id} was not found.");
             }
 
-            return Ok(isUpdated);
+            return NoContent();
         }
 
         [HttpDelete("{id:guid}")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -142,13 +142,13 @@ namespace MyRestaurantApp.Api.Controllers
             }
 
             // 4. Perform delete operation
-            var isDeleted = await _ratingService.DeleteAsync(id, cancellationToken);
-            if (!isDeleted)
+            var result = await _ratingService.DeleteAsync(id, cancellationToken);
+            if (!result)
             {
                 return NotFound($"Rating with ID {id} was not found.");
             }
 
-            return Ok(isDeleted);
+            return NoContent();
         }
     }
 }

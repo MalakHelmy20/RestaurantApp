@@ -21,6 +21,28 @@ namespace MyRestaurantApp.Domain
         //interval of time for open and close time
         public TimeSpan OpenTime { get; set; }
         public TimeSpan CloseTime { get; set; }
+
+        public bool IsOpenNow()
+        {
+            var localNow = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, TimeZoneInfo.Local);
+            return IsOpenAt(localNow.TimeOfDay);
+        }
+
+        public bool IsOpenAt(TimeSpan currentTime)
+        {
+            if (OpenTime == CloseTime)
+            {
+                return false;
+            }
+
+            if (OpenTime < CloseTime)
+            {
+                return currentTime >= OpenTime && currentTime < CloseTime;
+            }
+
+            // Overnight hours, e.g. 22:00 – 02:00
+            return currentTime >= OpenTime || currentTime < CloseTime;
+        }
           
 
 

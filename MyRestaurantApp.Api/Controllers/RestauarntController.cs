@@ -78,7 +78,7 @@ namespace MyRestaurantApp.Api.Controllers
         }
 
         [HttpPut("{id:guid}")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
@@ -104,17 +104,17 @@ namespace MyRestaurantApp.Api.Controllers
                 return Forbid(); // 403 Forbidden
             }
 
-            var isUpdated = await _restaurantService.UpdateAsync(id, request, userIdGuid, cancellationToken);
-            if (!isUpdated)
+            var result = await _restaurantService.UpdateAsync(id, request, userIdGuid, cancellationToken);
+            if (!result)
             {
                 return NotFound($"Restaurant with ID {id} was not found.");
             }
 
-            return Ok(isUpdated);
+            return NoContent();
         }
 
         [HttpDelete("{id:guid}")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [Authorize(Roles = "SystemAdmin")]
@@ -126,13 +126,13 @@ namespace MyRestaurantApp.Api.Controllers
                 return NotFound($"Restaurant with ID {id} was not found.");
             }
 
-            var isDeleted = await _restaurantService.DeleteAsync(id, cancellationToken);
-            if (!isDeleted)
+            var result= await _restaurantService.DeleteAsync(id, cancellationToken);
+            if (!result)
             {
                 return NotFound($"Restaurant with ID {id} was not found.");
             }
 
-            return Ok(isDeleted);
+            return NoContent();
         }
     }
 }

@@ -40,7 +40,9 @@ builder.Services.AddControllers();
 
 // Configure Application DbContext with SQL Server using the Connection string from appsettings.json
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlServer(
+        builder.Configuration.GetConnectionString("DefaultConnection"),
+        sql => sql.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery)));
 
 // Register Users Services & Repositories
 builder.Services.AddScoped<IUserRepository, UserRepository>();

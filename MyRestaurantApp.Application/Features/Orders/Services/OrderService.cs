@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -35,6 +36,8 @@ namespace MyRestaurantApp.Application.Features.Orders.Services
     {
         throw new KeyNotFoundException("Restaurant was not found.");
     }
+
+    EnsureRestaurantIsOpen(restaurant);
 
     IEnumerable<Guid> productIds = request.OrderItems.Select(i => i.ProductId);
     var products = (await _productRepository.GetByIdsAsync(productIds, cancellationToken)).ToList();
@@ -91,6 +94,14 @@ namespace MyRestaurantApp.Application.Features.Orders.Services
                     throw new InvalidOperationException("Order must contain at least one item.");
                 }
 
+                var restaurant = await _restaurantRepository.GetByIdAsync(order.RestaurantId, cancellationToken);
+                if (restaurant == null)
+                {
+                    throw new KeyNotFoundException("Restaurant was not found.");
+                }
+
+                EnsureRestaurantIsOpen(restaurant);
+
                 var productIds = request.OrderItems.Select(i => i.ProductId);
                 products = (await _productRepository.GetByIdsAsync(productIds, cancellationToken)).ToList();
 
@@ -125,6 +136,22 @@ namespace MyRestaurantApp.Application.Features.Orders.Services
         {
             var result = await _orderRepository.DeleteAsync(orderId, cancellationToken);
             return result;
+        }
+
+        private static void EnsureRestaurantIsOpen(Restaurant restaurant)
+        {
+            if (restaurant.IsOpenNow())
+            {
+                return;
+            }
+
+            throw new InvalidOperationException(
+                $"This restaurant is currently closed. Orders are accepted between {FormatHours(restaurant.OpenTime)} and {FormatHours(restaurant.CloseTime)}.");
+        }
+
+        private static string FormatHours(TimeSpan time)
+        {
+            return DateTime.Today.Add(time).ToString("h:mm tt", CultureInfo.InvariantCulture);
         }
     }
 }

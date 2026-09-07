@@ -27,6 +27,7 @@ namespace MyRestaurantApp.Infrastructure.Repository.CategoryRepo
         public async Task<Category?> GetByIdAsync(Guid categoryId, CancellationToken cancellationToken = default)
         {
             return await _dbContext.Categories
+                .AsSplitQuery()
                 .Include(c => c.Products)
                 .Include(c => c.RestaurantCategories)
                 .FirstOrDefaultAsync(x => x.Id == categoryId, cancellationToken);
@@ -35,6 +36,7 @@ namespace MyRestaurantApp.Infrastructure.Repository.CategoryRepo
         public async Task<IEnumerable<Category>> GetAllAsync(CancellationToken cancellationToken = default)
         {
             return await _dbContext.Categories
+                .AsSplitQuery()
                 .Include(c => c.Products)
                 .Include(c => c.RestaurantCategories)
                 .AsNoTracking()

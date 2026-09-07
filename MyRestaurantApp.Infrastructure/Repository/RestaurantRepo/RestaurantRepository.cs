@@ -77,10 +77,10 @@ namespace MyRestaurantApp.Infrastructure.Repository.RestaurantRepo
 
         public async Task<IEnumerable<Restaurant>> GetFilteredAsync(RestaurantFilterRequest filter, CancellationToken cancellationToken = default)
         {
-          
             var query = _dbContext.Restaurants
                 .Where(r => !r.IsDeleted)
                 .AsNoTracking()
+                .Include(r => r.Ratings)
                 .AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(filter.SearchTerm))
@@ -91,9 +91,6 @@ namespace MyRestaurantApp.Infrastructure.Repository.RestaurantRepo
 
             if (filter.ProductId.HasValue)
                 query = query.Where(r => r.Products.Any(p => p.Id == filter.ProductId.Value));
-
-            
-            query = WithDetails(query);
 
             var pageNumber = filter.PageNumber < 1 ? 1 : filter.PageNumber;
             var pageSize = filter.PageSize < 1 ? 10 : Math.Min(filter.PageSize, 100);
@@ -108,9 +105,9 @@ namespace MyRestaurantApp.Infrastructure.Repository.RestaurantRepo
         private static IQueryable<Restaurant> WithDetails(IQueryable<Restaurant> query)
         {
             return query
+                .AsSplitQuery()
                 .Include(r => r.RestaurantCategories)
                     .ThenInclude(rc => rc.Category)
-                        .ThenInclude(c => c!.Products)
                 .Include(r => r.Products)
                 .Include(r => r.Owner)
                 .Include(r => r.Ratings);

@@ -42,6 +42,7 @@ namespace MyRestaurantApp.Api.Controllers
 
             var order = await _orderService.CreateAsync(request, userIdGuid, cancellationToken);
             return CreatedAtAction(nameof(GetById), new { id = order.Id }, order);
+
         }
 
         [HttpGet("{id:guid}")]
@@ -125,7 +126,7 @@ namespace MyRestaurantApp.Api.Controllers
         }
 
         [HttpPut("{id:guid}")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
@@ -182,18 +183,18 @@ namespace MyRestaurantApp.Api.Controllers
                 return BadRequest("SystemAdmin can only update order status.");
             }
 
-            var isUpdated = await _orderService.UpdateAsync(id, request, userIdGuid, cancellationToken);
-            if (!isUpdated)
+            var result = await _orderService.UpdateAsync(id, request, userIdGuid, cancellationToken);
+            if (!result)
             {
                 return NotFound($"Order with ID {id} was not found.");
             }
 
-            return Ok(new { Message = "Order updated successfully.", Updated = isUpdated });
+            return NoContent();
         }
 
 
         [HttpDelete("{id:guid}")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -217,13 +218,13 @@ namespace MyRestaurantApp.Api.Controllers
                 return Forbid();
             }
 
-            var isDeleted = await _orderService.DeleteAsync(id, cancellationToken);
-            if (!isDeleted)
+            var result= await _orderService.DeleteAsync(id, cancellationToken);
+            if (!result)
             {
                 return NotFound($"Order with ID {id} was not found.");
             }
 
-            return Ok(isDeleted);
+            return NoContent();
         }
     }
 }
