@@ -1,7 +1,7 @@
 # My Restaurant App
 ASP.NET Core backend for a multi-restaurant ordering platform. The API models real restaurant operations: who can do what, when a kitchen is open, and what the database is never allowed to accept.
 ## Features
-- **Clean Architecture** — API, Application, Domain, and Infrastructure stay separated
+- **Layer-Based Architecture** — API, Application, Domain, and Infrastructure stay separated
 - **JWT auth** with three roles: `SystemAdmin`, `RestaurantOwner`, `Customer`
 - **BCrypt** password hashing
 - **Role-aware orders** — customers see their own, owners see their restaurants, admins see everything
